@@ -1,0 +1,17 @@
+from src.scheduler.schedulerClass import Scheduler
+def save_info(scheduler:Scheduler):
+    cluster = scheduler.cluster
+    max_cpu = 0
+    max_gpu = 0
+    rest_cpu = 0
+    rest_gpu = 0
+    success_num = 0
+    for node in cluster:
+        max_cpu += node.get_max_cpu().sum()
+        max_gpu += node.get_max_gpu().sum()
+        rest_cpu += node.get_cpu_info().sum()
+        rest_gpu += node.get_gpu_info().sum()
+        success_num += node.get_success_num()
+    cpu_rate = (max_cpu-rest_cpu)*1.0/max_cpu
+    gpu_rate = (max_gpu-rest_gpu)*1.0/max_gpu
+    print(cpu_rate,gpu_rate,scheduler.reschedule_num,scheduler.fail_num,success_num,type(scheduler).__name__)
