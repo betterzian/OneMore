@@ -6,3 +6,4 @@ __time_accurately_predict__ = 90
 __online_task_num__ = 2000
 __offline_task_num__ = 10000
 __zero__ = 0.0001
+__cpu_gpu_rate__ = 4

@@ -5,17 +5,30 @@ class FirstFitScheduler(Scheduler):
         super().__init__(cluster,can_predict)
 
     def run(self,task):
-        cpu,gpu = self.get_task_info(task)
-        now_priority = 99999999.0
+        task_cpu, task_gpu = self.get_task_info(task)
         now_select = -1
+        gpu_select = -1
         for node in self.cluster:
-            temp_node_cpu,_ = self.get_node_info(node)
-            if np.any(cpu > temp_node_cpu):
+            temp_select = {}
+            temp_node_cpu, temp_node_gpu = self.get_node_info(node)
+            if np.any(task_cpu > temp_node_cpu):
                 continue
             else:
-                temp_priority = np.sum(temp_node_cpu - cpu)
-            if temp_priority < now_priority:
-                now_priority = temp_priority
+                for i in range(len(task_gpu)):
+                    for j in range(len(temp_node_gpu)):
+                        if np.any(task_gpu[i] > temp_node_gpu[j]):
+                            continue
+                        else:
+                            temp_select[j] = i
+                            temp_node_gpu[j] -= task_gpu[i]
+                            break
+            if len(temp_select) == len(task_gpu):
                 now_select = node
+                gpu_select = temp_select
+                break
+
         if now_select != -1:
-            self.set_task(now_select,task)
+            self.set_task(now_select, task, gpu_select)
+            return True
+        else:
+            return False

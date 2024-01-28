@@ -23,6 +23,7 @@ class RandomFitScheduler(Scheduler):
                             continue
                         else:
                             temp_select[j] = i
+                            temp_node_gpu[j] -= task_gpu[i]
                             break
             if len(temp_select) == len(task_gpu):
                 now_select = node
