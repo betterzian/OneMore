@@ -26,6 +26,7 @@ class Scheduler:
         pass
 
     def get_task_info(self,task:Task):
+        if
         if task.get_id() not in self.__task_mem:
             self.__task_mem[task.get_id()] = Mem()
         task_mem = self.__task_mem[task.get_id()]

@@ -34,6 +34,9 @@ def generate_offline_task_list(src_task = [], task_num = 500, src_task_file = st
     return： task_list 任务队列
     保存task_list 至 ../data/task_list.csv
     """
+
+    if task_num == 0:
+        return []
     if len(src_task) == 0:
         src_task = pd.read_csv(src_task_file,header=0)
     # src_task = src_task["creation_time"]-src_task["creation_time"].max()
@@ -53,6 +56,8 @@ def generate_offline_task_list(src_task = [], task_num = 500, src_task_file = st
 
 
 def generate_online_task_list(task_num = 10):
+    if task_num == 0:
+        return []
     file_list = os.listdir('/disk7T/vis/code/OneMore/data_src/online_task/')
     length = len(file_list) - 1
     task_list = []
