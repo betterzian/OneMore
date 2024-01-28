@@ -14,4 +14,4 @@ def save_info(scheduler:Scheduler):
         success_num += node.get_success_num()
     cpu_rate = (max_cpu-rest_cpu)*1.0/max_cpu
     gpu_rate = (max_gpu-rest_gpu)*1.0/max_gpu
-    print(cpu_rate,gpu_rate,scheduler.reschedule_num,scheduler.fail_num,success_num,type(scheduler).__name__)
+    print(cpu_rate,gpu_rate,scheduler.reschedule_num,scheduler.fail_num,success_num,scheduler.task_cache_num,scheduler.task_no_cache_num,scheduler.node_cache_num,scheduler.node_no_cache_num,type(scheduler).__name__)

@@ -1,8 +1,5 @@
-from src.scheduler.smallGreedyScheduler import SmallGreedyScheduler
-from src.scheduler.largeGreedyScheduler import LargeGreedyScheduler
-from src.scheduler.normalScheduler import NormalScheduler
-from src.scheduler.randomFitScheduler import RandomFitScheduler
-from src.scheduler.myAlgorithm.varianceScheduler import VarianceScheduler
+from src.scheduler.otherAlgorithm.randomFitScheduler import RandomFitScheduler
+
 
 def init_scheduler(cluster):
     schedulers = []

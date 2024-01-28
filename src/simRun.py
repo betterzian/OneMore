@@ -50,6 +50,7 @@ def run(scheduler, online_task_list, offline_task_list):
 
 def sim_run():
     cluster = generate_cluster(node_type=[(24,4),(48,8)],node_num=(72,24))
+    #cluster = generate_cluster(node_type=[(24, 4), (48, 8)], node_num=(3, 3))
     online_task_list = generate_online_task_list(task_num=__online_task_num__)
     offline_task_list = generate_offline_task_list(task_num=__offline_task_num__)
     schedulers = init_scheduler(cluster)

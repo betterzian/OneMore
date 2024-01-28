@@ -4,10 +4,9 @@ class VarianceScheduler(Scheduler):
     def __init__(self,cluster,can_predict = True):
         super().__init__(cluster,can_predict)
 
-
     def run(self,task):
         cpu,gpu = self.get_task_info(task)
-        nowVar = 99999999.9
+        now_var = 99999999.9
         second_var = 99999999.9
         now_add = 0
         now_select = -1
@@ -29,9 +28,9 @@ class VarianceScheduler(Scheduler):
                         second_select = node
                 continue
             else:
-                tempVar = np.var(temp_node_cpu - cpu)
-            if tempVar < nowVar:
-                nowVar = tempVar
+                temp_var = np.var(temp_node_cpu - cpu)
+            if temp_var < now_var:
+                now_var = temp_var
                 now_select = node
         if now_select != -1:
             self.set_task(now_select,task)
