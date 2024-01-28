@@ -1,8 +1,7 @@
 import math
-
 from src.envSim.task import Task
 from src.envSim.node import Node
-from src.simParam import __time_can_predict__,__time_block_size__,__time_accurately_predict__
+from src.simParam import __time_can_predict__,__time_block_size__,__time_accurately_predict__,__cpu_gpu_rate__
 import numpy as np
 from abc import abstractmethod
 from src.envSim.timeSim import TimeHolder
@@ -27,6 +26,7 @@ class Scheduler:
         self.task_cache_num = 0
         self.node_no_cache_num = 0
         self.task_no_cache_num = 0
+        self.__rate = __cpu_gpu_rate__
     @abstractmethod
     def run(self,task:Task):
         pass

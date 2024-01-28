@@ -3,7 +3,7 @@ import numpy as np
 import math
 import random
 class RandomFitScheduler(Scheduler):
-    def __init__(self,cluster,can_predict = True):
+    def __init__(self,cluster,can_predict = False):
         super().__init__(cluster,can_predict)
 
     def run(self,task):
