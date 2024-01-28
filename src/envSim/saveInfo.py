@@ -18,5 +18,5 @@ def save_info(scheduler:Scheduler):
     gpu_rate = (max_gpu-rest_gpu)*1.0/max_gpu
     str_list = [cpu_rate,gpu_rate,scheduler.reschedule_num,scheduler.fail_num,success_num,scheduler.task_cache_num,scheduler.task_no_cache_num,scheduler.node_cache_num,scheduler.node_no_cache_num,type(scheduler).__name__,scheduler.get_can_predict()]
     str_list= pd.DataFrame(str_list)
-    str_list.to_csv('../../output/scheduler_result.txt', index=False, header=False, sep='\t', mode='a',encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
+    str_list.to_csv('../output/scheduler_result.txt', index=False, header=False, sep='\t', mode='a',encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
     print(str_list)
