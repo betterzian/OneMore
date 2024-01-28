@@ -5,6 +5,7 @@ from src.simParam import __time_can_predict__,__time_block_size__,__time_accurat
 import numpy as np
 from abc import abstractmethod
 from src.envSim.timeSim import TimeHolder
+import time
 class Mem:
     def __init__(self):
         self.time = TimeHolder().get_time()
@@ -27,12 +28,19 @@ class Scheduler:
         self.node_no_cache_num = 0
         self.task_no_cache_num = 0
         self.rate = __cpu_gpu_rate__
+        self.__time = 0
     @abstractmethod
     def run(self,task:Task):
         pass
 
     def get_can_predict(self):
         return self.__can_predict
+
+    def set_time(self):
+        self.__time = time.time() - self.__time
+
+    def get_time(self):
+        return self.__time
 
     def __deal_data(self,temp_cpu,temp_gpu,func):
         cpu = temp_cpu[0:__time_accurately_predict__]

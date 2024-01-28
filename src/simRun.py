@@ -8,6 +8,7 @@ from simParam import __online_task_num__,__offline_task_num__
 from datetime import datetime
 import os
 def run(scheduler, online_task_list, offline_task_list):
+    scheduler.set_time()
     while online_task_list:
         now_task = online_task_list.pop()
         isOk = scheduler.run(now_task)
@@ -46,6 +47,7 @@ def run(scheduler, online_task_list, offline_task_list):
         scheduler.fail_num += len(fail_task)
         TimeHolder().add_time()
         pbar.update(1)
+    scheduler.set_time()
     save_info(scheduler)
     pbar.close()
 
