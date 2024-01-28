@@ -5,7 +5,8 @@ from scheduler.schedulerList import init_scheduler
 from multiprocessing import Pool
 from tqdm import tqdm
 from simParam import __online_task_num__,__offline_task_num__
-
+from datetime import datetime
+import os
 def run(scheduler, online_task_list, offline_task_list):
     while online_task_list:
         now_task = online_task_list.pop()
@@ -60,3 +61,5 @@ def sim_run():
     # p.close()
     # p.join()
         run(scheduler, online_task_list, offline_task_list)
+    current_time = datetime.now()
+    os.rename("../output/scheduler_result.txt", "../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".txt")

@@ -4,6 +4,6 @@ __time_can_predict__ = 3600
 __time_block_size__ = 90
 __time_accurately_predict__ = 90
 __online_task_num__ = 1000
-__offline_task_num__ = 10000
+__offline_task_num__ = 8000
 __zero__ = 0.0001
 __cpu_gpu_rate__ = 4

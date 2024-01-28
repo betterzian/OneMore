@@ -31,6 +31,9 @@ class Scheduler:
     def run(self,task:Task):
         pass
 
+    def get_can_predict(self):
+        return self.__can_predict
+
     def __deal_data(self,temp_cpu,temp_gpu,func):
         cpu = temp_cpu[0:__time_accurately_predict__]
         gpu = []
@@ -98,7 +101,7 @@ class Scheduler:
         if self.__can_predict:
             temp_cpu = node.get_cpu_info(self.__time_can_predict)
             temp_gpu = node.get_gpu_info(self.__time_can_predict)
-            cpu,gpu = self.__deal_data(temp_cpu,temp_gpu,np.mean)
+            cpu,gpu = self.__deal_data(temp_cpu,temp_gpu,np.min)
         else:
             cpu = node.get_cpu_info(1)
             gpu = node.get_gpu_info(1)
