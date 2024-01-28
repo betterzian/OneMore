@@ -28,7 +28,7 @@ class BestFitScheduler(Scheduler):
                                 gpu_priority = temp_gpu_priority
                                 temp_gpu_select = j
                     if temp_gpu_select != -1:
-                        temp_priority += (gpu_priority*self.__rate)
+                        temp_priority += (gpu_priority*self.rate)
                         temp_select[temp_gpu_select] = i
                         temp_node_gpu[temp_gpu_select] -= task_gpu[i]
                 if len(temp_select) == len(task_gpu):

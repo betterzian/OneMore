@@ -57,9 +57,9 @@ def sim_run():
     schedulers = init_scheduler(cluster)
     p = Pool(len(schedulers))
     for scheduler in schedulers:
-    #     p.apply_async(run, args=(scheduler, online_task_list, offline_task_list))
-    # p.close()
-    # p.join()
-        run(scheduler, online_task_list, offline_task_list)
+        p.apply_async(run, args=(scheduler, online_task_list, offline_task_list))
+    p.close()
+    p.join()
+        #run(scheduler, online_task_list, offline_task_list)
     current_time = datetime.now()
     os.rename("../output/scheduler_result.txt", "../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".txt")

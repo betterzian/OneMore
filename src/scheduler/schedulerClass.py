@@ -26,7 +26,7 @@ class Scheduler:
         self.task_cache_num = 0
         self.node_no_cache_num = 0
         self.task_no_cache_num = 0
-        self.__rate = __cpu_gpu_rate__
+        self.rate = __cpu_gpu_rate__
     @abstractmethod
     def run(self,task:Task):
         pass
