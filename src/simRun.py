@@ -1,12 +1,14 @@
+import pandas as pd
+import csv
 from src.envSim.timeSim import TimeHolder
 from envSim.generateEnv import generate_cluster, generate_online_task_list,generate_offline_task_list
 from envSim.saveInfo import save_info
 from scheduler.schedulerList import init_scheduler
 from multiprocessing import Pool
 from tqdm import tqdm
-from simParam import __online_task_num__,__offline_task_num__
 from datetime import datetime
 import os
+
 def run(scheduler, online_task_list, offline_task_list):
     scheduler.set_time()
     while online_task_list:
@@ -54,8 +56,8 @@ def run(scheduler, online_task_list, offline_task_list):
 def sim_run():
     cluster = generate_cluster(node_type=[(24,4),(48,8)],node_num=(72,24))
     #cluster = generate_cluster(node_type=[(24, 4), (48, 8)], node_num=(3, 3))
-    online_task_list = generate_online_task_list(task_num=__online_task_num__)
-    offline_task_list = generate_offline_task_list(task_num=__offline_task_num__)
+    online_task_list = generate_online_task_list()
+    offline_task_list = generate_offline_task_list()
     schedulers = init_scheduler(cluster)
     p = Pool(len(schedulers))
     for scheduler in schedulers:
@@ -64,4 +66,6 @@ def sim_run():
     p.join()
         #run(scheduler, online_task_list, offline_task_list)
     current_time = datetime.now()
-    os.rename("../output/scheduler_result.txt", "../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".txt")
+    file = pd.read_csv("../output/scheduler_result.txt",header=None, sep='\t', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
+    file.to_csv("../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".txt",index=False)
+    os.remove("../output/scheduler_result.txt")
