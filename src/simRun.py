@@ -68,7 +68,7 @@ def sim_run(multi_bool = True):
         p.join()
     else:
         for scheduler in schedulers:
-            print("单线程")
+            print("单进程")
             run(scheduler, online_task_list, offline_task_list)
     current_time = datetime.now()
     file = pd.read_csv("../output/scheduler_result.txt",header=0, sep='\t', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')

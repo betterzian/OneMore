@@ -5,6 +5,7 @@ data_src/
 
 output/
 
+test/
 
 # IntelliJ project files
 .idea

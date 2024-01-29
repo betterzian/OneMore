@@ -7,10 +7,11 @@ from src.scheduler.myAlgorithm.varianceScheduler import VarianceScheduler
 def init_scheduler(cluster):
     schedulers = []
     can_predict = [True,False]
-    for temp in can_predict:
-        schedulers.append(RandomFitScheduler(cluster,temp))
-        schedulers.append(FirstFitScheduler(cluster,temp))
-        schedulers.append(BestFitScheduler(cluster,temp))
-        schedulers.append(WorstFitScheduler(cluster,temp))
     #schedulers.append(VarianceScheduler(cluster))
+    for temp in can_predict:
+        schedulers.append(VarianceScheduler(cluster, temp))
+        # schedulers.append(RandomFitScheduler(cluster,temp))
+        # schedulers.append(FirstFitScheduler(cluster,temp))
+        # schedulers.append(BestFitScheduler(cluster,temp))
+        # schedulers.append(WorstFitScheduler(cluster,temp))
     return schedulers
