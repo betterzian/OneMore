@@ -5,7 +5,7 @@ import pandas as pd
 import random
 import os
 from src.envSim.timeSim import TimeHolder
-from src.simParam import __online_task_num__, __offline_task_num__
+from src.simParam import __online_task_num__, __offline_task_num__,__node_num__,__node_type__
 
 
 # def generate_task_list(src_task = [], task_num = 500, src_task_file = str("../data_src/app_resources.csv")):
@@ -89,7 +89,7 @@ def generate_src_task_list():
     return tasks
 
 
-def generate_cluster(node_type=[(32, 4), (96, 8)], node_num=(10, 10)):
+def generate_cluster(node_type=__node_type__, node_num=__node_num__):
     """
     args：node_type =  [(32,4),(96,8)] node的资源种类
           node_num = (10,10) node不同的资源种类对应的数量
@@ -112,4 +112,4 @@ def generate_cluster(node_type=[(32, 4), (96, 8)], node_num=(10, 10)):
 if __name__ == "__main__":
     online_task_list = generate_online_task_list(task_num=10)
     offline_task_list = generate_offline_task_list(task_num=10)
-    cluster = generate_cluster()
+    cluster = generate_cluster(node_type=[(32, 4), (96, 8)], node_num=(10, 10))

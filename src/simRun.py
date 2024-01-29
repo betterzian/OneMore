@@ -54,8 +54,7 @@ def run(scheduler, online_task_list, offline_task_list):
     pbar.close()
 
 def sim_run():
-    cluster = generate_cluster(node_type=[(24,4),(48,8)],node_num=(72,24))
-    #cluster = generate_cluster(node_type=[(24, 4), (48, 8)], node_num=(3, 3))
+    cluster = generate_cluster()
     online_task_list = generate_online_task_list()
     offline_task_list = generate_offline_task_list()
     schedulers = init_scheduler(cluster)
@@ -67,5 +66,5 @@ def sim_run():
         #run(scheduler, online_task_list, offline_task_list)
     current_time = datetime.now()
     file = pd.read_csv("../output/scheduler_result.txt",header=None, sep='\t', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
-    file.to_csv("../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".txt",index=False)
+    file.to_csv("../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".csv",index=False,header=False)
     os.remove("../output/scheduler_result.txt")

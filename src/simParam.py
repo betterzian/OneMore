@@ -1,9 +1,11 @@
 __time_len__ = 8640 #69120
 __time_init_flag__ = __time_len__ - 8640
-__time_can_predict__ = 7200
+__time_can_predict__ = 3600
 __time_block_size__ = 90
 __time_accurately_predict__ = 90
 __online_task_num__ = 1000
 __offline_task_num__ = 10000
 __zero__ = 0.0001
 __cpu_gpu_rate__ = 4
+__node_type__ = [(24,4),(48,8)]
+__node_num__ = (72, 24)
