@@ -53,18 +53,25 @@ def run(scheduler, online_task_list, offline_task_list):
     save_info(scheduler)
     pbar.close()
 
-def sim_run():
+def sim_run(multi_bool = True):
+    if os.path.exists("../output/scheduler_result.txt"):
+        os.remove("../output/scheduler_result.txt")
     cluster = generate_cluster()
     online_task_list = generate_online_task_list()
     offline_task_list = generate_offline_task_list()
     schedulers = init_scheduler(cluster)
-    p = Pool(len(schedulers))
-    for scheduler in schedulers:
-        p.apply_async(run, args=(scheduler, online_task_list, offline_task_list))
-    p.close()
-    p.join()
-        #run(scheduler, online_task_list, offline_task_list)
+    if multi_bool:
+        p = Pool(len(schedulers))
+        for scheduler in schedulers:
+            p.apply_async(run, args=(scheduler, online_task_list, offline_task_list))
+        p.close()
+        p.join()
+    else:
+        for scheduler in schedulers:
+            print("单线程")
+            run(scheduler, online_task_list, offline_task_list)
     current_time = datetime.now()
-    file = pd.read_csv("../output/scheduler_result.txt",header=None, sep='\t', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
-    file.to_csv("../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".csv",index=False,header=False)
+    file = pd.read_csv("../output/scheduler_result.txt",header=0, sep='\t', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
+    file = file[file['cpu_rate'] != "cpu_rate"]
+    file.to_csv("../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".csv",index=False,header=True)
     os.remove("../output/scheduler_result.txt")
