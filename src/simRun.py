@@ -15,7 +15,7 @@ def run(scheduler, online_task_list, offline_task_list):
         now_task = online_task_list.pop()
         isOk = scheduler.run(now_task)
     save_info(scheduler)
-    pbar = tqdm(total=TimeHolder().get_time_left(),desc=type(scheduler).__name__)
+    pbar = tqdm(total=TimeHolder().get_time_left(),desc=type(scheduler).__name__+","+str(scheduler.get_can_predict()))
     fail_task = []
     reschedule_task = []
     while TimeHolder().get_time_left() > 0:
@@ -68,10 +68,10 @@ def sim_run(multi_bool = True):
         p.join()
     else:
         for scheduler in schedulers:
-            print("单进程")
+            print("单进程,测试用")
             run(scheduler, online_task_list, offline_task_list)
     current_time = datetime.now()
     file = pd.read_csv("../output/scheduler_result.txt",header=0, sep='\t', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
     file = file[file['cpu_rate'] != "cpu_rate"]
-    file.to_csv("../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".csv",index=False,header=True)
+    file.to_csv("../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".csv",index=False,header=True,sep=',')
     os.remove("../output/scheduler_result.txt")

@@ -44,5 +44,4 @@ def save_info(scheduler: Scheduler):
     args_dict["node_num"] = [args["nn"]]
 
     str_list = pd.DataFrame.from_dict(args_dict)
-    str_list.to_csv('../output/scheduler_result.txt', index=False, header=True, sep='\t', mode='a', encoding="utf-8",
-                    quoting=csv.QUOTE_NONE, escapechar=',')
+    str_list.to_csv('../output/scheduler_result.txt', index=False, header=True, sep='\t', mode='a', encoding="utf-8",quoting=csv.QUOTE_NONE, escapechar=',')

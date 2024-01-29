@@ -8,5 +8,5 @@ __online_task_num__ = 1
 __offline_task_num__ = 8
 __cpu_gpu_rate__ = 4
 __node_type__ = [(24, 4), (48, 8)]
-__node_num__ = [72, 24]
-args = {'tl': 8640, 'tif': 0, 'tcp': 3600, 'tbs': 90, 'tap': 90, 'ontn': 1, 'oftn': 8, 'cgr': 4, 'nt': [(24, 4), (48, 8)], 'nn': [72, 24]}
+__node_num__ = [9, 3]
+args = {'tl': 8640, 'tif': 0, 'tcp': 3600, 'tbs': 90, 'tap': 90, 'ontn': 1, 'oftn': 8, 'cgr': 4, 'nt': [(24, 4), (48, 8)], 'nn': [9, 3]}
