@@ -48,6 +48,7 @@ class Scheduler:
         for i in range(len(temp_gpu)):
             gpu.append(temp_gpu[i][0:__time_accurately_predict__])
         if __time_accurately_predict__ >= len(temp_cpu):
+            gpu = np.array(gpu)
             return cpu,gpu
         temp_cpu = temp_cpu[__time_accurately_predict__:]
         split_indices = np.arange(self.__time_block_size, len(temp_cpu), self.__time_block_size)
@@ -63,9 +64,7 @@ class Scheduler:
 
     def __return_task_mem(self,mem):
         cpu = mem[0][:self.__task_len]
-        gpu = []
-        for i in range(len(mem[1])):
-            gpu.append(mem[1][i][:self.__task_len])
+        gpu = mem[1][:,:self.__task_len]
         return cpu,gpu
 
     def get_task_info(self,task:Task):

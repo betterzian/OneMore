@@ -22,6 +22,8 @@ def run(scheduler, online_task_list, offline_task_list):
         for node in scheduler.cluster:
             reschedule_task.extend(node.check())
         scheduler.reschedule_num += len(reschedule_task)
+        # if len(reschedule_task) > 10:
+        #     print(len(reschedule_task))
         while reschedule_task:
             task = reschedule_task.pop()
             if task.get_arrive_time() < 0:

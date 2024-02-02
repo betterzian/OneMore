@@ -7,58 +7,42 @@ import os
 from src.envSim.timeSim import TimeHolder
 from src.simParam import __online_task_num__, __offline_task_num__,__node_num__,__node_type__
 
-
-# def generate_task_list(src_task = [], task_num = 500, src_task_file = str("../data_src/app_resources.csv")):
-#     """
-#     根据任务抽样来源队列，随机生成待调度队列
-#     args：task_num 任务数量 , src_task_file = str("../data/src_task.csv")任务抽样文件地址
-#     return： task_list 任务队列
-#     保存task_list 至 ../data/task_list.csv
-#     """
-#     if len(src_task) == 0:
-#         src_task = np.loadtxt(src_task_file, delimiter=',',dtype=float)
-#     np.random.shuffle(src_task)
-#     task_list = []
-#     task_list_record = []
-#     for i in range(task_num):
-#         temp = np.array(src_task[random.randint(0, len(src_task) - 1)])
-#         task_list.append(Task(i,temp))
-# #         task_list_record.append(temp)
-# #     task_list_record = np.array(task_list_record)
-#     np.savetxt("../output/task_list.csv",task_list_record, delimiter=',')
-#     return task_list
-
-
-def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,
-                               src_task_file=str("../data_src/offline_task/openb_pod_list_gpushare100.csv")):
-    """
-    根据任务抽样来源队列，随机生成待调度队列
-    args：task_num 任务数量 , src_task_file = str("../data/src_task.csv")任务抽样文件地址
-    return： task_list 任务队列
-    保存task_list 至 ../data/task_list.csv
-    """
-
+def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,src_task_file = str("../data_src/offline_task/off_task_list.csv")):
     if task_num == 0:
         return []
     if len(src_task) == 0:
-        src_task = pd.read_csv(src_task_file, header=0)
-    # src_task = src_task["creation_time"]-src_task["creation_time"].max()
-    src_task.drop("gpu_spec", axis=1, inplace=True)
-    src_task.dropna(inplace=True)
+        src_task = np.loadtxt(src_task_file, delimiter=',',dtype=float)
+    np.random.shuffle(src_task)
     task_list = []
-    task_list_record = []
     time_len = TimeHolder().get_time_left()
     for i in range(task_num):
-        temp = src_task.iloc[random.randint(0, len(src_task) - 1)]
+        temp = src_task[random.randint(0, len(src_task) - 1)]
         task_list.append(
-            Task(id=i, cpu=round(temp["cpu_milli"] / 1000, 1), gpu=round(temp["num_gpu"] * temp["gpu_milli"] / 1000, 1),
-                 time_len=int((temp["deletion_time"] - temp["scheduled_time"]) / 10 + 1),
+            Task(id=i, cpu=round(temp[0]), gpu=temp[1],
+                 time_len=random.randint(90, time_len - 1),
                  arrive_time=random.randint(0, time_len - 1)))
-    #     task_list_record.append(temp)
-    # task_list_record = np.array(task_list_record)
-    # np.savetxt("../output/offline_task_list.csv",task_list_record, delimiter=',')
     task_list = sorted(task_list, key=lambda task: -task.get_arrive_time())
     return task_list
+
+# def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,
+#                                src_task_file=str("../data_src/offline_task/openb_pod_list_gpushare100.csv")):
+#     if task_num == 0:
+#         return []
+#     if len(src_task) == 0:
+#         src_task = pd.read_csv(src_task_file, header=0)
+#     src_task.drop("gpu_spec", axis=1, inplace=True)
+#     src_task.dropna(inplace=True)
+#     task_list = []
+#     task_list_record = []
+#     time_len = TimeHolder().get_time_left()
+#     for i in range(task_num):
+#         temp = src_task.iloc[random.randint(0, len(src_task) - 1)]
+#         task_list.append(
+#             Task(id=i, cpu=round(temp["cpu_milli"] / 1000, 1), gpu=round(temp["num_gpu"] * temp["gpu_milli"] / 1000, 1),
+#                  time_len=int((temp["deletion_time"] - temp["scheduled_time"]) / 10 + 1),
+#                  arrive_time=random.randint(0, time_len - 1)))
+#     task_list = sorted(task_list, key=lambda task: -task.get_arrive_time())
+#     return task_list
 
 
 def generate_online_task_list(task_num=__online_task_num__):
@@ -90,13 +74,6 @@ def generate_src_task_list():
 
 
 def generate_cluster(node_type=__node_type__, node_num=__node_num__):
-    """
-    args：node_type =  [(32,4),(96,8)] node的资源种类
-          node_num = (10,10) node不同的资源种类对应的数量
-          time_block = 2 node的时间块数量
-    return: node_list(第一位为gpu数量）
-    保存node_list到 "../data/node_list.csv"
-    """
     cluster = []
     count = 0
     for i in range(len(node_type)):

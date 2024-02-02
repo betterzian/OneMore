@@ -3,13 +3,13 @@ from src.scheduler.otherAlgorithm.firstFitScheduler import FirstFitScheduler
 from src.scheduler.otherAlgorithm.bestFitScheduler import BestFitScheduler
 from src.scheduler.otherAlgorithm.worstFitScheduler import WorstFitScheduler
 from src.scheduler.myAlgorithm.varianceScheduler import VarianceScheduler
-from src.scheduler.myAlgorithm.sssppScheduler import SSSPPScheduler
+from src.scheduler.myAlgorithm.oneMoreScheduler import OneMoreScheduler
 
 def init_scheduler(cluster):
     schedulers = []
-    can_predict = [True,False]
+    can_predict = [False,True]
     for temp in can_predict:
-        #schedulers.append(SSSPPScheduler(cluster,temp))
+        schedulers.append(OneMoreScheduler(cluster,temp))
         schedulers.append(VarianceScheduler(cluster,temp))
         schedulers.append(RandomFitScheduler(cluster,temp))
         schedulers.append(FirstFitScheduler(cluster,temp))
