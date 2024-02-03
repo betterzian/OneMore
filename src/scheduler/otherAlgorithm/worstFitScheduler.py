@@ -1,8 +1,8 @@
 from src.scheduler.schedulerClass import Scheduler
 import numpy as np
 class WorstFitScheduler(Scheduler):
-    def __init__(self,cluster,can_predict = True):
-        super().__init__(cluster,can_predict)
+    def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
+        super().__init__(cluster,can_predict,task_mem,node_mem)
 
 
     def run(self,task):

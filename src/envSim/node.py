@@ -18,6 +18,8 @@ class Node:
             self.__gpu.append(CpuGpu(1))
         self.__success_num = 0
 
+
+
     def get_id(self):
         return self.__id
 
@@ -48,13 +50,17 @@ class Node:
             assert temp.shape == (self.__gpu_num, min(len,TimeHolder().get_time_left())), "gpu形状不符"
         return temp
 
+
+    def get_offline_task(self):
+        return self.__offline_task_list
+
     def set_task(self,task:Task,gpu_site ={}):
-        self.__cpu.set_info(task.get_cpu_info())
+        temp_cpu = task.get_cpu_info()
+        self.__cpu.set_info(temp_cpu)
         task_gpu = task.get_gpu_info()
         for key in gpu_site:
             self.__gpu[key].set_info(task_gpu[gpu_site[key]])
-        task.set_start_time()
-        task.set_gpu_site(gpu_site)
+        task.set_task(self.__id,len(temp_cpu),gpu_site)
         if task.get_arrive_time() < 0:
             self.__online_task_list.append(task)
         else:
@@ -69,6 +75,7 @@ class Node:
         task_gpu = task.get_gpu_info()
         for key in gpu_site:
             self.__gpu[key].set_info(-task_gpu[gpu_site[key]],start)
+        task.pop_task()
 
 
     def __check_resource(self):

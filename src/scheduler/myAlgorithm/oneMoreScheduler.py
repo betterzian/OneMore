@@ -1,11 +1,13 @@
 from src.scheduler.schedulerClass import Scheduler
+from src.scheduler.myAlgorithm.varianceAndScheduler import VarianceAndScheduler
 from src.scheduler.myAlgorithm.varianceScheduler import VarianceScheduler
 from src.scheduler.myAlgorithm.sssppScheduler import SSSPPScheduler
+
 class OneMoreScheduler(Scheduler):
-    def __init__(self, cluster, can_predict=True):
-        super().__init__(cluster, can_predict)
-        self.online_scheduler = VarianceScheduler(cluster,can_predict)
-        self.offline_scheduler = SSSPPScheduler(cluster,can_predict)
+    def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
+        super().__init__(cluster,can_predict,task_mem,node_mem)
+        self.online_scheduler = VarianceScheduler(cluster, can_predict,self._task_mem,self._node_mem)
+        self.offline_scheduler = SSSPPScheduler(cluster, can_predict,self._task_mem,self._node_mem)
 
     def run(self,task):
         if task.get_arrive_time() < 0:

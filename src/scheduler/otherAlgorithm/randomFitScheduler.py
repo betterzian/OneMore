@@ -3,8 +3,8 @@ import numpy as np
 import math
 import random
 class RandomFitScheduler(Scheduler):
-    def __init__(self,cluster,can_predict = False):
-        super().__init__(cluster,can_predict)
+    def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
+        super().__init__(cluster,can_predict,task_mem,node_mem)
 
     def run(self,task):
         task_cpu,task_gpu = self.get_task_info(task)

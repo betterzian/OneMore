@@ -24,6 +24,7 @@ def save_info(scheduler: Scheduler):
     args_dict["reschedule_num"] = scheduler.reschedule_num
     args_dict["fail_num"] = scheduler.fail_num
     args_dict["success_num"] = success_num
+    args_dict["force_num"] = scheduler.force_num
     args_dict["task_cache_num"] = scheduler.task_cache_num
     args_dict["task_no_cache_num"] = scheduler.task_no_cache_num
     args_dict["node_cache_num"] = scheduler.node_cache_num

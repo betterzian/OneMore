@@ -1,10 +1,20 @@
 from src.scheduler.schedulerClass import Scheduler
+from src.scheduler.otherAlgorithm.randomFitScheduler import RandomFitScheduler
 import numpy as np
-class VarianceScheduler(Scheduler):
+import random
+class VarianceAndScheduler(Scheduler):
     def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
         super().__init__(cluster,can_predict,task_mem,node_mem)
+        self.help_scheduler = RandomFitScheduler(cluster,can_predict)
+        self.prob = 0.4
+        self.count = 0
 
     def run(self,task):
+        self.count += 1
+        if self.count%100 == 0:
+            self.prob /= 2
+        if random.random() < self.prob:
+            return self.help_scheduler.run(task)
         task_cpu, task_gpu = self.get_task_info(task)
         now_priority = 999999999.0
         now_select = -1

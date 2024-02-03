@@ -5,8 +5,8 @@ from copy import deepcopy
 
 
 class SSSPPScheduler(Scheduler):
-    def __init__(self, cluster, can_predict=True):
-        super().__init__(cluster, can_predict)
+    def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
+        super().__init__(cluster,can_predict,task_mem,node_mem)
         self.state_int = np.loadtxt("../data_src/state_value/state_int.csv", delimiter=",")
         self.state_float = np.loadtxt("../data_src/state_value/state_float.csv", delimiter=",")
         self.state_only_float = np.loadtxt("../data_src/state_value/state_only_float.csv", delimiter=",")
