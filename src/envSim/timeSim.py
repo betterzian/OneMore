@@ -12,10 +12,12 @@ class TimeSim:
         self.__time_end_flag = time_end_flag
         self.__time = 0
         self.__time_left = self.__time_end_flag - self.__time_init_flag
+        self.__fake_time_left = self.__time_len - self.__time_init_flag
 
     def add_time(self):
         self.__time += 1
         self.__time_left -= 1
+        self.__fake_time_left -= 1
 
     def get_time_len(self):
         return self.__time_len
@@ -25,6 +27,12 @@ class TimeSim:
 
     def get_time_init_flag(self):
         return self.__time_init_flag
+
+    def get_time_end_flag(self):
+        return self.__time_end_flag
+
+    def get_fake_time_left(self):
+        return self.__fake_time_left
 
     def get_time(self):
         return self.__time

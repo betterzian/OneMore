@@ -2,7 +2,7 @@ from src.scheduler.schedulerClass import Scheduler
 import pandas as pd
 import csv
 from src.simParam import args
-
+from src.envSim.timeSim import TimeHolder
 
 def save_info(scheduler: Scheduler):
     cluster = scheduler.cluster
@@ -13,11 +13,12 @@ def save_info(scheduler: Scheduler):
     rest_gpu = 0
     success_num = 0
     node_dict = {}
+    length = TimeHolder().get_time_end_flag() - TimeHolder().get_time_init_flag()
     for node in cluster:
-        max_cpu += node.get_max_cpu().sum()
-        max_gpu += node.get_max_gpu().sum()
-        rest_cpu += node.get_cpu_info().sum()
-        rest_gpu += node.get_gpu_info().sum()
+        max_cpu += node.get_max_cpu()[:length].sum()
+        max_gpu += node.get_max_gpu()[:length].sum()
+        rest_cpu += node.get_cpu_info()[:length].sum()
+        rest_gpu += node.get_gpu_info()[:length].sum()
         success_num += node.get_success_num()
         node_dict[node.get_id()] = [len(node.get_online_task()),node.get_cpu_info().max(),node.get_cpu_info().min(),node.get_max_gpu().max(),node.get_cpu_info(),node.get_max_gpu()]
     args_dict["cpu_rate"] = (max_cpu - rest_cpu) * 1.0 / max_cpu

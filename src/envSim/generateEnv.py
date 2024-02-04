@@ -5,7 +5,7 @@ import pandas as pd
 import random
 import os
 from src.envSim.timeSim import TimeHolder
-from src.simParam import __online_task_num__, __offline_task_num__,__node_num__,__node_type__,__time_end_flag__,__time_init_flag__
+from src.simParam import __online_task_num__, __offline_task_num__,__node_num__,__node_type__
 
 def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,src_task_file = str("../data_src/offline_task/off_task_list.csv")):
     if task_num == 0:
@@ -14,7 +14,7 @@ def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,src_ta
         src_task = np.loadtxt(src_task_file, delimiter=',',dtype=float)
     np.random.shuffle(src_task)
     task_list = []
-    time_len = TimeHolder().get_time_left()
+    time_len = TimeHolder().get_fake_time_left()
     for i in range(task_num):
         temp = src_task[random.randint(0, len(src_task) - 1)]
         task_list.append(
@@ -34,12 +34,12 @@ def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,src_ta
 #     src_task.dropna(inplace=True)
 #     task_list = []
 #     task_list_record = []
-#     time_len = TimeHolder().get_time_left()
+#     time_len = TimeHolder().get_fake_time_left()
 #     for i in range(task_num):
 #         temp = src_task.iloc[random.randint(0, len(src_task) - 1)]
 #         task_list.append(
 #             Task(id=i, cpu=round(temp["cpu_milli"] / 1000, 1), gpu=round(temp["num_gpu"] * temp["gpu_milli"] / 1000, 1),
-#                  time_len=int((temp["deletion_time"] - temp["scheduled_time"]) / 10 + 1),
+#                  time_len=min(time_len-1 , int((temp["deletion_time"] - temp["scheduled_time"]) / 10 + 1)),
 #                  arrive_time=random.randint(0, time_len - 1)))
 #     task_list = sorted(task_list, key=lambda task: -task.get_arrive_time())
 #     return task_list
