@@ -1,5 +1,4 @@
 from src.scheduler.schedulerClass import Scheduler
-from src.scheduler.myAlgorithm.varianceAndScheduler import VarianceAndScheduler
 from src.scheduler.myAlgorithm.varianceScheduler import VarianceScheduler
 from src.scheduler.myAlgorithm.sssppScheduler import SSSPPScheduler
 

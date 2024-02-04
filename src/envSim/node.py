@@ -50,6 +50,8 @@ class Node:
             assert temp.shape == (self.__gpu_num, min(len,TimeHolder().get_time_left())), "gpu形状不符"
         return temp
 
+    def get_online_task(self):
+        return self.__online_task_list
 
     def get_offline_task(self):
         return self.__offline_task_list

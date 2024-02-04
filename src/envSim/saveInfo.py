@@ -12,13 +12,14 @@ def save_info(scheduler: Scheduler):
     rest_cpu = 0
     rest_gpu = 0
     success_num = 0
+    node_dict = {}
     for node in cluster:
         max_cpu += node.get_max_cpu().sum()
         max_gpu += node.get_max_gpu().sum()
         rest_cpu += node.get_cpu_info().sum()
         rest_gpu += node.get_gpu_info().sum()
         success_num += node.get_success_num()
-
+        node_dict[node.get_id()] = [len(node.get_online_task()),node.get_cpu_info().max(),node.get_cpu_info().min(),node.get_max_gpu().max(),node.get_cpu_info(),node.get_max_gpu()]
     args_dict["cpu_rate"] = (max_cpu - rest_cpu) * 1.0 / max_cpu
     args_dict["gpu_rate"] = (max_gpu - rest_gpu) * 1.0 / max_gpu
     args_dict["reschedule_num"] = scheduler.reschedule_num
@@ -46,3 +47,5 @@ def save_info(scheduler: Scheduler):
 
     str_list = pd.DataFrame.from_dict(args_dict)
     str_list.to_csv('../output/scheduler_result.txt', index=False, header=True, sep='\t', mode='a', encoding="utf-8",quoting=csv.QUOTE_NONE, escapechar=',')
+    node_list = pd.DataFrame.from_dict(node_dict)
+    node_list.to_csv('../output/node_info/'+type(scheduler).__name__+'_'+str(scheduler.get_can_predict())+'_node.csv',index=False,header=False,sep=',')

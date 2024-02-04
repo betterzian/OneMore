@@ -21,18 +21,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='param')
     parser.add_argument('--tl', type=int, default=8640)
     parser.add_argument('--tif', type=int, default=0)
-    parser.add_argument('--tcp', type=int, default=3600)
+    parser.add_argument('--tcp', type=int, default=8640)
     parser.add_argument('--tbs', type=int, default=90)
     parser.add_argument('--tap', type=int, default=90)
     parser.add_argument('--ontn', type=int, default=1000)
-    parser.add_argument('--oftn', type=int, default=1500)
-    parser.add_argument('--cgr', type=int, default=4)
-    parser.add_argument('--nt', type=list, default=[(24, 4), (48, 8)])
-    parser.add_argument('--nn', type=tuple, default=[72, 72])
+    parser.add_argument('--oftn', type=int, default=300)
+    parser.add_argument('--cgr', type=int, default=10)
+    parser.add_argument('--nt', type=list, default=[(64, 4), (96, 8)])
+    parser.add_argument('--nn', type=tuple, default=[9, 9])
     args = parser.parse_args()
     generate_sim_param(args)
     from simRun import sim_run
-    sim_run(False)
+    sim_run(True)
 
 
 
