@@ -11,7 +11,7 @@ def init_scheduler(cluster):
         schedulers.append(VarianceScheduler(cluster,temp))
         schedulers.append(OneMoreScheduler(cluster,temp))
         schedulers.append(RandomFitScheduler(cluster,temp))
-        schedulers.append(FirstFitScheduler(cluster,temp))
-        schedulers.append(BestFitScheduler(cluster,temp))
-        schedulers.append(WorstFitScheduler(cluster,temp))
+        # schedulers.append(FirstFitScheduler(cluster,temp))
+        # schedulers.append(BestFitScheduler(cluster,temp))
+        # schedulers.append(WorstFitScheduler(cluster,temp))
     return schedulers
