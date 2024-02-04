@@ -5,7 +5,7 @@ import pandas as pd
 import random
 import os
 from src.envSim.timeSim import TimeHolder
-from src.simParam import __online_task_num__, __offline_task_num__,__node_num__,__node_type__
+from src.simParam import __online_task_num__, __offline_task_num__,__node_num__,__node_type__,__time_end_flag__,__time_init_flag__
 
 def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,src_task_file = str("../data_src/offline_task/off_task_list.csv")):
     if task_num == 0:
@@ -56,9 +56,6 @@ def generate_online_task_list(task_num=__online_task_num__):
     while i < task_num:
         file_name = file_list[random.randint(0, length)]
         temp = np.loadtxt('/disk7T/vis/code/OneMore/data_src/online_task/' + str(file_name), delimiter=",")
-        if len(temp) != 8641:
-            print(file_name, len(temp))
-            continue
         task_list.append(Task(i, temp))
         task_list_record.append(temp)
         i += 1

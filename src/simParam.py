@@ -1,6 +1,7 @@
 __zero__ = 1e-06
 __time_len__ = 8640
 __time_init_flag__ = 0
+__time_end_flag__ = 8640
 __time_can_predict__ = 3600
 __time_block_size__ = 90
 __time_accurately_predict__ = 90

@@ -36,6 +36,7 @@ def save_info(scheduler: Scheduler):
 
     args_dict["time_len"] = args["tl"]
     args_dict["time_init_flag"] = args["tif"]
+    args_dict["time_end_flag"] = args["tef"]
     args_dict["time_can_predict"] = args["tcp"]
     args_dict["time_block_size"] = args["tbs"]
     args_dict["time_accurately_predict"] = args["tap"]
