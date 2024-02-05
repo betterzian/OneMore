@@ -18,7 +18,7 @@ def run(scheduler, online_task_list, offline_task_list):
         if not isOk:
             fail_task.append(now_task)
     save_info(scheduler)
-    pbar = tqdm(total=TimeHolder().get_fake_time_left(), desc=type(scheduler).__name__ + "," + str(scheduler.get_can_predict()))
+    pbar = tqdm(total=TimeHolder().get_time_left(), desc=type(scheduler).__name__ + "," + str(scheduler.get_can_predict()))
     reschedule_task = []
     while TimeHolder().get_fake_time_left() > 0:
         for node in scheduler.cluster:
@@ -61,7 +61,6 @@ def run(scheduler, online_task_list, offline_task_list):
         pbar.update(1)
     scheduler.set_time()
     while TimeHolder().get_time_left() > 0:
-        pbar.update(1)
         for node in scheduler.cluster:
             node.check()
         TimeHolder().add_time()

@@ -20,7 +20,7 @@ def generate_sim_param(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='param')
-    parser.add_argument('--tl', type=int, default=8640)
+    parser.add_argument('--tl', type=int, default=17280)
     parser.add_argument('--tif', type=int, default=0)
     parser.add_argument('--tef', type=int, default=8640)
     parser.add_argument('--tcp', type=int, default=8640)

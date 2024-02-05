@@ -11,8 +11,8 @@ class TimeSim:
         self.__time_init_flag = time_init_flag
         self.__time_end_flag = time_end_flag
         self.__time = 0
-        self.__time_left = self.__time_end_flag - self.__time_init_flag
-        self.__fake_time_left = self.__time_len - self.__time_init_flag
+        self.__fake_time_left = self.__time_end_flag - self.__time_init_flag
+        self.__time_left = self.__time_len - self.__time_init_flag
 
     def add_time(self):
         self.__time += 1

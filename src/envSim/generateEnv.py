@@ -56,6 +56,8 @@ def generate_online_task_list(task_num=__online_task_num__):
     while i < task_num:
         file_name = file_list[random.randint(0, length)]
         temp = np.loadtxt('/disk7T/vis/code/OneMore/data_src/online_task/' + str(file_name), delimiter=",")
+        if len(temp) != 17281:
+            continue
         task_list.append(Task(i, temp))
         task_list_record.append(temp)
         i += 1
