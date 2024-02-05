@@ -10,6 +10,9 @@ from datetime import datetime
 import os
 
 def run(scheduler, online_task_list, offline_task_list):
+    force_schedule = True
+    if len(offline_task_list) == 0:
+        force_schedule = False
     scheduler.set_time()
     fail_task = []
     while online_task_list:
@@ -40,7 +43,7 @@ def run(scheduler, online_task_list, offline_task_list):
         while online_task_list:
             now_task = online_task_list.pop()
             isOk = scheduler.run(now_task)
-            if not isOk:
+            if force_schedule and not isOk:
                 fail_task.extend(scheduler.force_set_online_task(now_task))
         while fail_task:
             task = fail_task.pop()

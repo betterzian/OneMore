@@ -20,6 +20,7 @@ def generate_sim_param(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='param')
+    parser.add_argument('--test', type=int, default=True)
     parser.add_argument('--tl', type=int, default=17280)
     parser.add_argument('--tif', type=int, default=0)
     parser.add_argument('--tef', type=int, default=8640)
@@ -30,11 +31,11 @@ if __name__ == '__main__':
     parser.add_argument('--oftn', type=int, default=2000)
     parser.add_argument('--cgr', type=int, default=10)
     parser.add_argument('--nt', type=list, default=[(64, 4), (96, 8)])
-    parser.add_argument('--nn', type=tuple, default=[72, 72])
+    parser.add_argument('--nn', type=tuple, default=[72,72])
     args = parser.parse_args()
     generate_sim_param(args)
     from simRun import sim_run
-    sim_run(True)
+    sim_run(args.test)
 
 
 

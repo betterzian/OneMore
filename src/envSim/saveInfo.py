@@ -18,7 +18,7 @@ def save_info(scheduler: Scheduler):
         max_cpu += node.get_max_cpu()[:length].sum()
         max_gpu += node.get_max_gpu()[:length].sum()
         rest_cpu += node.get_cpu_info()[:length].sum()
-        rest_gpu += node.get_gpu_info()[:length].sum()
+        rest_gpu += node.get_gpu_info()[:,:length].sum()
         success_num += node.get_success_num()
         node_dict[node.get_id()] = [len(node.get_online_task()),node.get_cpu_info().max(),node.get_cpu_info().min(),node.get_max_gpu().max(),node.get_cpu_info(),node.get_max_gpu()]
     args_dict["cpu_rate"] = (max_cpu - rest_cpu) * 1.0 / max_cpu
