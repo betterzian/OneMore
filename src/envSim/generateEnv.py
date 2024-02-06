@@ -62,7 +62,7 @@ def generate_online_task_list(task_num=__online_task_num__):
         task_list_record.append(temp)
         i += 1
     task_list_record = np.array(task_list_record)
-    np.savetxt("../output/online_task_list.csv", task_list_record, delimiter=',')
+    #np.savetxt("../output/online_task_list.csv", task_list_record, delimiter=',')
     return task_list
 
 

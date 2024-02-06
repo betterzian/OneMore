@@ -6,7 +6,7 @@ from envSim.saveInfo import save_info
 from scheduler.schedulerList import init_scheduler
 from multiprocessing import Pool
 from tqdm import tqdm
-from datetime import datetime
+from src.simParam import __csv_name__
 import os
 
 def run(scheduler, online_task_list, offline_task_list):
@@ -88,8 +88,7 @@ def sim_run(multi_bool = True):
         for scheduler in schedulers:
             print("单进程,测试用")
             run(scheduler, online_task_list, offline_task_list)
-    current_time = datetime.now()
-    file = pd.read_csv("../output/scheduler_result.txt",header=0, sep='\t', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
+    file = pd.read_csv("../output/scheduler_result_"+str(__csv_name__)+".txt",header=0, sep='\t', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
     file = file[file['cpu_rate'] != "cpu_rate"]
-    file.to_csv("../output/scheduler_result_"+str(current_time.year)+"_"+str(current_time.month)+"_"+str(current_time.day)+"_"+str(current_time.hour)+"_"+str(current_time.minute)+"_"+str(current_time.second)+".csv",index=False,header=True,sep=',')
-    os.remove("../output/scheduler_result.txt")
+    file.to_csv("../output/scheduler_result_"+str(__csv_name__)+".csv",index=False,header=True,sep=',')
+    os.remove("../output/scheduler_result_"+str(__csv_name__)+".txt")

@@ -3,7 +3,7 @@ import pandas as pd
 import csv
 from src.simParam import args
 from src.envSim.timeSim import TimeHolder
-
+from src.simParam import __csv_name__
 def save_info(scheduler: Scheduler):
     cluster = scheduler.cluster
     args_dict = {}
@@ -48,6 +48,6 @@ def save_info(scheduler: Scheduler):
     args_dict["node_num"] = [args["nn"]]
 
     str_list = pd.DataFrame.from_dict(args_dict)
-    str_list.to_csv('../output/scheduler_result.txt', index=False, header=True, sep='\t', mode='a', encoding="utf-8",quoting=csv.QUOTE_NONE, escapechar=',')
+    str_list.to_csv('../output/scheduler_result_'+str(__csv_name__)+'.txt', index=False, header=True, sep='\t', mode='a', encoding="utf-8",quoting=csv.QUOTE_NONE, escapechar=',')
     node_list = pd.DataFrame.from_dict(node_dict)
-    node_list.to_csv('../output/node_info/'+type(scheduler).__name__+'_'+str(scheduler.get_can_predict())+'_node.csv',index=False,header=False,sep=',')
+    node_list.to_csv('../output/node_info/'+type(scheduler).__name__+'_'+str(scheduler.get_can_predict())+str(__csv_name__)+'_node.csv',index=False,header=False,sep=',')
