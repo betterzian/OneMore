@@ -43,7 +43,7 @@ def save_info(scheduler: Scheduler):
     args_dict["time_accurately_predict"] = args["tap"]
     args_dict["online_task_num"] = args["ontn"]
     args_dict["offline_task_num"] = args["oftn"]
-    args_dict["cpu_gpu_rate"] = args["cgr"]
+    #args_dict["cpu_gpu_rate"] = args["cgr"]
     args_dict["node_type"] = [args["nt"]]
     args_dict["node_num"] = [args["nn"]]
 

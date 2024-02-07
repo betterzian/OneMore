@@ -72,8 +72,6 @@ def run(scheduler, online_task_list, offline_task_list):
     pbar.close()
 
 def sim_run(multi_bool = True):
-    if os.path.exists("../output/scheduler_result.txt"):
-        os.remove("../output/scheduler_result.txt")
     cluster = generate_cluster()
     online_task_list = generate_online_task_list()
     offline_task_list = generate_offline_task_list()
