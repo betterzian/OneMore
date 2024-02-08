@@ -1,14 +1,14 @@
 from src.scheduler.schedulerClass import Scheduler
-from src.simParam import __zero__,__filename__
+from src.envSim.simParam import ParamHolder
 import numpy as np
 from copy import deepcopy
 
 class SSSPPScheduler(Scheduler):
     def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
         super().__init__(cluster,can_predict,task_mem,node_mem)
-        self.state_int = np.loadtxt("../data_src/state_value/"+__filename__+"/state_int.csv", delimiter=",")
-        self.state_float = np.loadtxt("../data_src/state_value/"+__filename__+"/state_float.csv", delimiter=",")
-        self.state_only_float = np.loadtxt("../data_src/state_value/"+__filename__+"/state_only_float.csv", delimiter=",")
+        self.state_int = np.loadtxt("../data_src/state_value/"+ParamHolder().filename+"/state_int.csv", delimiter=",")
+        self.state_float = np.loadtxt("../data_src/state_value/"+ParamHolder().filename+"/state_float.csv", delimiter=",")
+        self.state_only_float = np.loadtxt("../data_src/state_value/"+ParamHolder().filename+"/state_only_float.csv", delimiter=",")
 
     def run(self, task):
         task_cpu, task_gpu = self.get_task_info(task)
@@ -29,7 +29,7 @@ class SSSPPScheduler(Scheduler):
                 temp_node_cpu = temp_node_cpu.min()
                 temp_node_gpu_old = deepcopy(temp_node_gpu)
                 gpu_int_old = np.count_nonzero(temp_node_gpu_old == 1)
-                gpu_float_old = np.count_nonzero(temp_node_gpu_old > __zero__) - gpu_int_old
+                gpu_float_old = np.count_nonzero(temp_node_gpu_old > ParamHolder().zero) - gpu_int_old
                 if gpu_float_old > 0:
                     if gpu_int_old > 0:
                         state_old = self.state_int[int(task_cpu)][int(gpu_int_old)]

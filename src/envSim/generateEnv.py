@@ -5,9 +5,9 @@ import pandas as pd
 import random
 import os
 from src.envSim.timeSim import TimeHolder
-from src.simParam import __online_task_num__, __offline_task_num__,__node_num__,__node_type__
+from src.envSim.simParam import ParamHolder
 
-def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,src_task_file = str("../data_src/offline_task/off_task_list.csv")):
+def generate_offline_task_list(src_task=[], task_num=ParamHolder().offline_task_num,src_task_file = str("../data_src/offline_task/off_task_list.csv")):
     if task_num == 0:
         return []
     if len(src_task) == 0:
@@ -45,7 +45,7 @@ def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,src_ta
 #     return task_list
 
 
-def generate_online_task_list(task_num=__online_task_num__):
+def generate_online_task_list(task_num=ParamHolder().online_task_num):
     if task_num == 0:
         return []
     file_list = os.listdir('/disk7T/vis/code/OneMore/data_src/online_task/')
@@ -72,7 +72,7 @@ def generate_src_task_list():
     return tasks
 
 
-def generate_cluster(node_type=__node_type__, node_num=__node_num__):
+def generate_cluster(node_type=ParamHolder().node_type, node_num=ParamHolder().node_num):
     cluster = []
     count = 0
     for i in range(len(node_type)):

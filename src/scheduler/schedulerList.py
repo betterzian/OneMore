@@ -8,7 +8,7 @@ def init_scheduler(cluster):
     schedulers = []
     can_predict = [True,False]
     for temp in can_predict:
-        #schedulers.append(VarianceScheduler(cluster,temp))
+        schedulers.append(VarianceScheduler(cluster,temp))
         schedulers.append(OneMoreScheduler(cluster,temp))
         schedulers.append(RandomFitScheduler(cluster,temp))
         schedulers.append(FirstFitScheduler(cluster,temp))

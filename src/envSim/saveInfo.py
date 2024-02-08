@@ -1,9 +1,9 @@
 from src.scheduler.schedulerClass import Scheduler
 import pandas as pd
 import csv
-from src.simParam import args
 from src.envSim.timeSim import TimeHolder
-from src.simParam import __csv_name__
+from src.envSim.simParam import ParamHolder
+
 def save_info(scheduler: Scheduler):
     cluster = scheduler.cluster
     args_dict = {}
@@ -35,19 +35,18 @@ def save_info(scheduler: Scheduler):
     args_dict["can_predict"] = scheduler.get_can_predict()
     args_dict["run_time"] = scheduler.get_time()
 
-    args_dict["time_len"] = args["tl"]
-    args_dict["time_init_flag"] = args["tif"]
-    args_dict["time_end_flag"] = args["tef"]
-    args_dict["time_can_predict"] = args["tcp"]
-    args_dict["time_block_size"] = args["tbs"]
-    args_dict["time_accurately_predict"] = args["tap"]
-    args_dict["online_task_num"] = args["ontn"]
-    args_dict["offline_task_num"] = args["oftn"]
-    #args_dict["cpu_gpu_rate"] = args["cgr"]
-    args_dict["node_type"] = [args["nt"]]
-    args_dict["node_num"] = [args["nn"]]
+    args_dict["time_len"] = ParamHolder().time_len
+    args_dict["time_init_flag"] = ParamHolder().time_init_flag
+    args_dict["time_end_flag"] = ParamHolder().time_end_flag
+    args_dict["time_can_predict"] = ParamHolder().time_can_predict
+    args_dict["time_block_size"] = ParamHolder().time_block_size
+    args_dict["time_accurately_predict"] = ParamHolder().time_accurately_predict
+    args_dict["online_task_num"] = ParamHolder().online_task_num
+    args_dict["offline_task_num"] = ParamHolder().offline_task_num
+    args_dict["node_type"] = [ParamHolder().node_type]
+    args_dict["node_num"] = [ParamHolder().node_num]
 
     str_list = pd.DataFrame.from_dict(args_dict)
-    str_list.to_csv('../output/scheduler_result_'+str(__csv_name__)+'.txt', index=False, header=True, sep='\t', mode='a', encoding="utf-8",quoting=csv.QUOTE_NONE, escapechar=',')
+    str_list.to_csv('../output/scheduler_result_'+str(ParamHolder().csv_name)+'.txt', index=False, header=True, sep='\t', mode='a', encoding="utf-8",quoting=csv.QUOTE_NONE, escapechar=',')
     node_list = pd.DataFrame.from_dict(node_dict)
-    node_list.to_csv('../output/node_info/'+type(scheduler).__name__+'_'+str(scheduler.get_can_predict())+str(__csv_name__)+'_node.csv',index=False,header=False,sep=',')
+    node_list.to_csv('../output/node_info/'+type(scheduler).__name__+'_'+str(scheduler.get_can_predict())+str(ParamHolder().csv_name)+'_node.csv',index=False,header=False,sep=',')

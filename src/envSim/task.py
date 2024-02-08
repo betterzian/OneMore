@@ -1,7 +1,7 @@
 from src.envSim.cpuGpu import CpuGpu
 from src.envSim.timeSim import TimeHolder
 import numpy as np
-from src.simParam import __cpu_gpu_rate__
+from src.envSim.simParam import ParamHolder
 
 class Task:
     def __init__(self, id, cpu, gpu= 0, time_len = -1, arrive_time = -1):
@@ -30,7 +30,7 @@ class Task:
         self.__gpu_num = len(self.__gpu)
         self.__node_id = -1
         self.__set_len = -1
-        self.__weight = self.__max_cpu + self.__max_gpu * __cpu_gpu_rate__
+        self.__weight = self.__max_cpu + self.__max_gpu * ParamHolder().cpu_gpu_rate
     def get_id(self):
         return self.__id
 

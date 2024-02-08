@@ -1,7 +1,7 @@
 import numpy as np
-import pandas as pd
-from src.simParam import __cpu_gpu_rate__,__zero__
+from src.envSim.simParam import ParamHolder
 from tqdm import tqdm
+
 def float_to_int(x):
     return int(x*10)
 
@@ -93,7 +93,7 @@ def state_value_float(sum, task_prob_float = [], smaller_task_count_float = [], 
         prob = 1.0 / smaller_task_count_float[size1][size2]
     for j in range(1,state_size[1]):
         if beta_F(smaller_task_count_float, np.array([0, j]),sum) < prob:
-            state_float[0][j] = j * 0.1 * __cpu_gpu_rate__
+            state_float[0][j] = j * 0.1 * ParamHolder().cpu_gpu_rate
         else:
             temp = 0
             for u_j in range(max(j-size2,0),j):
@@ -103,7 +103,7 @@ def state_value_float(sum, task_prob_float = [], smaller_task_count_float = [], 
     for i in range(1,state_size[0]):
         for j in range(0,state_size[1]):
             if beta_F(smaller_task_count_float, np.array([i, j]),sum) < prob:
-                state_float[i][j] = i + j * 0.1 * __cpu_gpu_rate__
+                state_float[i][j] = i + j * 0.1 * ParamHolder().cpu_gpu_rate
             else:
                 temp = 0
                 for u_i in range(max(i-size1,0),i):
@@ -153,7 +153,7 @@ def state_value_int(sum, task_prob_int = [], smaller_task_count_int = [], state_
         prob = 1.0 / smaller_task_count_int[size1][size2]
     for j in range(1,state_size[1]):
         if beta_F(smaller_task_count_int, np.array([0, j]),sum) < prob:
-            state_int[0][j] = j * __cpu_gpu_rate__
+            state_int[0][j] = j * ParamHolder().cpu_gpu_rate
         else:
             temp = 0
             for u_j in range(max(j-size2,0),j):
@@ -165,7 +165,7 @@ def state_value_int(sum, task_prob_int = [], smaller_task_count_int = [], state_
     for i in range(1,state_size[0]):
         for j in range(0,state_size[1]):
             if beta_F(smaller_task_count_int, np.array([i, j]),sum) < prob:
-                state_int[i][j] = i + j * __cpu_gpu_rate__
+                state_int[i][j] = i + j * ParamHolder().cpu_gpu_rate
             else:
                 temp = 0
                 for u_i in range(max(i-size1,0),i):
@@ -201,7 +201,7 @@ def state_value_only_float(sum, task_prob_float = [], smaller_task_count_float =
         prob = 1.0 / smaller_task_count_float[size1][size2]
     for j in range(1,10):
         if beta_F(smaller_task_count_float, np.array([size1, j]),sum) < prob:
-            state_only_float[j] = j * 0.1 * __cpu_gpu_rate__
+            state_only_float[j] = j * 0.1 * ParamHolder().cpu_gpu_rate
         else:
             temp = 0
             for u_j in range(j):

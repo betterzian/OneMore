@@ -1,6 +1,7 @@
-from src.simParam import __time_len__,__time_init_flag__,__time_end_flag__
+from src.envSim.simParam import ParamHolder
 import multiprocessing
 import threading
+
 class TimeSim:
     """
     时间模拟器，使用单例模式，一个进程一个。
@@ -46,5 +47,5 @@ class TimeHolder:
         if process_id not in cls._instances:
             cls._instances[process_id] = {}
         if thread_id not in cls._instances[process_id]:
-            cls._instances[process_id][thread_id] = TimeSim(__time_len__,__time_init_flag__,__time_end_flag__)
+            cls._instances[process_id][thread_id] = TimeSim(ParamHolder().time_len,ParamHolder().time_init_flag,ParamHolder().time_end_flag)
         return cls._instances[process_id][thread_id]

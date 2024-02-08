@@ -2,7 +2,8 @@ from src.envSim.cpuGpu import CpuGpu
 import numpy as np
 from src.envSim.timeSim import TimeHolder
 from src.envSim.task import Task
-from src.simParam import __zero__
+from src.envSim.simParam import ParamHolder
+
 class Node:
     def __init__(self,id,cpu_num,gpu_num):
         self.__id = id
@@ -86,7 +87,7 @@ class Node:
         for temp in self.__gpu:
             gpu.append(temp.check())
         gpu = np.array(gpu)
-        if cpu < -__zero__ or gpu.min() < -__zero__:
+        if cpu < -ParamHolder().zero or gpu.min() < -ParamHolder().zero:
             return False
         else:
             return True
