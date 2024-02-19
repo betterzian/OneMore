@@ -11,6 +11,6 @@ def txt_to_csv(csv_name):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='param')
-    parser.add_argument('--csv_name', type=str, default=None)
+    parser.add_argument('--csv_name', type=str, default="all_2024_2_9_18_24_59")
     args = parser.parse_args()
     txt_to_csv(args.csv_name)
