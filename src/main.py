@@ -7,6 +7,7 @@ from src.envSim.offlineTaskDataProcess import offline_data_process
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='param')
     parser.add_argument('--test', action='store_false')
+    parser.add_argument('--gather', action='store_false')
     parser.add_argument('--tl', type=int, default=17280)
     parser.add_argument('--tif', type=int, default=0)
     parser.add_argument('--tef', type=int, default=8640)
@@ -22,10 +23,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     ParamHolder(args)
     offline_data_process(ParamHolder().filename)
-    from simRun import sim_run
-    sim_run(args.test)
-    with open('../tmp/'+ParamHolder().csv_name+'.txt', 'a') as file:
-        file.write('ok\n')
+    if args.gather:
+        pass
+    else:
+        from simRun import sim_run
+        sim_run(args.test)
+        with open('../tmp/'+ParamHolder().csv_name+'.txt', 'a') as file:
+            file.write('ok\n')
 
 
 

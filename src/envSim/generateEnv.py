@@ -7,11 +7,13 @@ import os
 from src.envSim.timeSim import TimeHolder
 from src.envSim.simParam import ParamHolder
 
-def generate_offline_task_list(src_task=[], task_num=ParamHolder().offline_task_num,src_task_file = str("../data_src/offline_task/off_task_list.csv")):
+def generate_offline_task_list(src_task=[],task_num=ParamHolder().offline_task_num,src_task_file = str("../data_src/offline_task/off_task_list.csv"),all=False):
     if task_num == 0:
         return []
     if len(src_task) == 0:
         src_task = np.loadtxt(src_task_file, delimiter=',',dtype=float)
+    if all:
+        return src_task
     np.random.shuffle(src_task)
     task_list = []
     time_len = TimeHolder().get_fake_time_left()
