@@ -4,9 +4,6 @@ import numpy as np
 import torch.nn.functional as F
 import random
 
-
-
-
 class StateValue(nn.Module):
     def __init__(self, state_dim):
         super(StateValue, self).__init__()
@@ -28,24 +25,72 @@ def train():
     pass
 
 
-if __name__ == "__main__":
-    state_value = StateValue(9)
-    epoch = 1000
-    task_list = []
-    for _ in range(epoch):
-        fail_num = 0
-        node_info = np.random.rand(1, 9)
-        node_info = np.round(node_info, decimals=1)
+def get_next_state(state,task):
+    if state[0] < task[0]:
+        return False
+    if task[1] < 1:
+        diag_matrix = np.diag(np.ones(8)*task[1])
+        next_state = state[:,1:] - diag_matrix
+        positive_cols = np.all(next_state >= 0, axis=0)
+        next_state = next_state[positive_cols,:]
+        next_state = np.sort(next_state, axis=1)
+        next_state = np.insert(np.ones((8, 1)) * (state[0] - task[0]), 1, next_state, axis=1)
+        return next_state
+    cpu = state[0]
+    state[0] = 100
+    next_state = np.sort(state, axis=1)
+    for i in range(int(task[1])):
+        next_state[i+1] -= 1
+        if next_state[i+1] < 0:
+            return False
+    next_state = np.sort(next_state, axis=1)
+    next_state[0] = cpu - task[0]
+    state[0] = cpu
+    return next_state
 
-        for _ in range(10):
-            task = task_list[random.randint(0, len(task_list))]
-            task_cpu, task_gpu = self.get_task_info(task)
-            if node_cpu >= task_cpu and node_gpu >= task_gpu:
-                node_cpu -= task_cpu
-                node_gpu -= task_gpu
-            else:
-                fail_num += 1
-        data = np.concatenate((node_cpu, node_gpu, node_cpu.sum() + node_gpu.sum() * ParamHolder().cpu_gpu_rate),axis=1)
-        data = pd.DataFrame(data)
-        data.to_csv('../data_src/offline_task/off_task_list_data' + '.txt', index=False, header=True, sep='\t',
-                    mode='a', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
+class MemPool():
+    def __init__(self,max_len,batch_size):
+        self.__mem = []
+        self.__len = 0
+        self.__max_len = max_len
+        self.__batch_size = batch_size
+    def add_mem(self,mem):
+        pass
+
+    def get_mem(self):
+        pass
+
+
+
+if __name__ == "__main__":
+    lr = 0.01
+    epoch = 1000
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    state_value = StateValue(9).to(device)
+    optimizer = torch.optim.Adam(state_value.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+    for i in range(epoch):
+        state = generate_state()
+        task_list = generate_task()
+        next_value = 0
+        state_len = []
+        next_state = []
+        with torch.no_grad():
+            for task in task_list:
+                temp_next = get_next_state(state,task)
+                if not temp_next:
+                    temp_next += state.sum()
+                else:
+                    next_state.append(temp_next)
+                    state_len.append(len(temp_next))
+            next_state = np.array(next_state)
+            next_value = state_value(torch.from_numpy(next_state))
+            next_state = [torch.max(elem) for elem in torch.split(next_state,state_len)]
+            next_value += sum(next_state)
+        state = torch.from_numpy(state)
+        value = state_value(state)
+        loss = criterion(next_value, value)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
