@@ -13,16 +13,30 @@ class StateValue(nn.Module):
         super(StateValue, self).__init__()
         self.fc1 = nn.Linear(state_dim, 256)
         self.fc2 = nn.Linear(256, 256)
-        self.fc3 = nn.Linear(256, 256)
+        #self.fc3 = nn.Linear(256, 256)
         self.fc4 = nn.Linear(256, 128)
         self.fc5 = nn.Linear(128, 1)
+
+        for name, param in self.named_parameters():
+            if 'weight' in name:
+                torch.nn.init.normal_(param, mean=0, std=0.01)
+            elif 'bias' in name:
+                torch.nn.init.normal_(param, mean=0, std=0.01)
+
+        self.dropout1 = nn.Dropout(p=0.5)
+        self.dropout2 = nn.Dropout(p=0.5)
+        self.dropout3 = nn.Dropout(p=0.5)
         self.sp = nn.Softplus()
 
     def forward(self, x):
         x = F.leaky_relu(self.fc1(x))
+        x = self.dropout1(x)
         x = F.leaky_relu(self.fc2(x))
-        x = F.leaky_relu(self.fc3(x))
+        x = self.dropout2(x)
+        #x = F.leaky_relu(self.fc3(x))
+        #x = self.dropout3(x)
         x = F.leaky_relu(self.fc4(x))
+        x = self.dropout3(x)
         x = F.leaky_relu(self.fc5(x))
         return self.sp(x)
 
@@ -56,10 +70,7 @@ class BufferArray:
         state_len = self.__state_len[indices]
         next_state = self.__next_state[indices]
         state_value = self.__state_value[indices]
-        indices = state_len[: , 0] > 0
-        state_len = state_len[indices]
-        next_state = next_state[indices]
-        task_num = state_value[indices]
+        task_num = state_value
         task_num = task_num.reshape(-1).astype(int)
         state_len = state_len.reshape(-1)
         state_len = state_len[state_len > 0]
@@ -67,7 +78,7 @@ class BufferArray:
         next_state = next_state[next_state[:,0] != -1]
         state = torch.tensor(state, device=device)
         next_state = torch.tensor(next_state, device=device)
-        return state,next_state,state_len,task_num,state_value,indices
+        return state,next_state,state_len,task_num,state_value
 
 
 class TrainBot():
@@ -76,7 +87,8 @@ class TrainBot():
         self.__epoch = epoch
         self.__device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.__state_value = StateValue(9).to(self.__device)
-        if os.path.exists('../srcData/offline_task/off_task_list_model.pth'):
+        self.__state_value.train()
+        if os.path.exists('../srcData/offline_task/model/off_task_list_model.pth'):
             self.__state_value.load_state_dict(torch.load('../srcData/offline_task/model/off_task_list_model.pth'))
         self.__optimizer = torch.optim.Adam(self.__state_value.parameters(), lr=self.__lr)
         self.__criterion = nn.MSELoss()
@@ -127,16 +139,19 @@ class TrainBot():
         epoch = 6 - int(count/500)
         avg_loss = 0
         for _ in range(epoch):
-            state,next_state,state_len,task_num,state_value,indices = self.__reply_buffer.random_sample(512,self.__device)
-            state_real,_,_,_,state_value,_ = self.__reply_buffer_with_real_state.random_sample(512,self.__device)
+            state,next_state,state_len,task_num,_ = self.__reply_buffer.random_sample(512,self.__device)
+            state_real,_,_,_,state_value_real = self.__reply_buffer_with_real_state.random_sample(512,self.__device)
+            state = torch.cat((state, state_real), dim=0)
 
             with torch.no_grad():
+                state_value = torch.tensor(state_value_real, dtype=torch.float32).to(self.__device).reshape(-1, 1)
                 if len(next_state) != 0:
                     next_state_out = self.__state_value(next_state)
                     next_state_out = torch.tensor([torch.min(elem) for elem in torch.split(next_state_out, state_len.tolist())])
                     next_state_out = [torch.mean(elem) for elem in torch.split(next_state_out, task_num.tolist())]
-                    state_value[indices] = next_state_out
-                state_value = torch.tensor(state_value, dtype=torch.float32).to(self.__device).reshape(-1,1)
+                    next_state_out = torch.tensor(next_state_out, dtype=torch.float32).to(self.__device).reshape(-1, 1)
+                    state_value = torch.cat((next_state_out, state_value), dim=0)
+
             value = self.__state_value(state)
             loss = self.__criterion(value, state_value)
             self.__optimizer.zero_grad()
@@ -156,6 +171,8 @@ class TrainBot():
             next_state = abs(np.sort(-next_state, axis=1))
             next_state = np.insert(next_state, 0, np.ones(len(next_state)) * (state[0] - task[0]), axis=1)
             next_state = np.unique(next_state, axis=0)
+            if len(next_state) == 0:
+                return None
             return next_state.reshape(-1, 9)
         cpu = state[0]
         state[0] = 100
@@ -182,7 +199,7 @@ class TrainBot():
         state = abs(np.sort(-state))
         state[0] = round(random.uniform(0, cpu_max), 1)
         state_sum += state[0]
-        return state-half_state,state_sum
+        return state,state_sum
 
     def __generate_task(self):
         site = np.random.randint(0, self.__task_len, 100)
