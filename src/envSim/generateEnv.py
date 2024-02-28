@@ -7,7 +7,7 @@ import os
 from src.envSim.timeSim import TimeHolder
 from src.envSim.simParam import ParamHolder
 
-def generate_offline_task_list(src_task=[],task_num=ParamHolder().offline_task_num,src_task_file = str("../data_src/offline_task/off_task_list.csv"),all=False):
+def generate_offline_task_list(src_task=[],task_num=ParamHolder().offline_task_num,src_task_file = str("../srcData/offline_task/off_task_list.csv"),all=False):
     if task_num == 0:
         return []
     if len(src_task) == 0:
@@ -27,7 +27,7 @@ def generate_offline_task_list(src_task=[],task_num=ParamHolder().offline_task_n
     return task_list
 
 # def generate_offline_task_list(src_task=[], task_num=__offline_task_num__,
-#                                src_task_file=str("../data_src/offline_task/openb_pod_list_gpushare100.csv")):
+#                                src_task_file=str("../srcData/offline_task/openb_pod_list_gpushare100.csv")):
 #     if task_num == 0:
 #         return []
 #     if len(src_task) == 0:
@@ -50,14 +50,14 @@ def generate_offline_task_list(src_task=[],task_num=ParamHolder().offline_task_n
 def generate_online_task_list(task_num=ParamHolder().online_task_num):
     if task_num == 0:
         return []
-    file_list = os.listdir('/disk7T/vis/code/OneMore/data_src/online_task/')
+    file_list = os.listdir('/disk7T/vis/code/OneMore/srcData/online_task/')
     length = len(file_list) - 1
     task_list = []
     task_list_record = []
     i = 0
     while i < task_num:
         file_name = file_list[random.randint(0, length)]
-        temp = np.loadtxt('/disk7T/vis/code/OneMore/data_src/online_task/' + str(file_name), delimiter=",")
+        temp = np.loadtxt('/disk7T/vis/code/OneMore/srcData/online_task/' + str(file_name), delimiter=",")
         if len(temp) != 17281:
             continue
         task_list.append(Task(i, temp))
@@ -69,7 +69,7 @@ def generate_online_task_list(task_num=ParamHolder().online_task_num):
 
 
 def generate_src_task_list():
-    tasks = pd.read_csv('/disk7T/vis/code/OneMore/data_src/container.csv', header=None)
+    tasks = pd.read_csv('/disk7T/vis/code/OneMore/srcData/container.csv', header=None)
     tasks = tasks.values
     return tasks
 

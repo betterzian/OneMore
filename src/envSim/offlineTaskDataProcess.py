@@ -9,14 +9,14 @@ def float_to_int(x):
     return int(x*10)
 
 def offline_data_process(filename):
-    if os.path.exists("../data_src/state_value/"+filename+"/state_int.csv"):
-        with open("../data_src/state_value/"+filename+"/data.json", "r") as json_file:
+    if os.path.exists("../srcData/state_value/"+filename+"/state_int.csv"):
+        with open("../srcData/state_value/"+filename+"/data.json", "r") as json_file:
             data = json.load(json_file)
             ParamHolder().cpu_gpu_rate = data["cgr"]
             return
-    elif not os.path.exists("../data_src/state_value/"+filename):
-        os.mkdir("../data_src/state_value/"+filename)
-    src = pd.read_csv("../data_src/offline_task/"+filename+".csv", header=0)
+    elif not os.path.exists("../srcData/state_value/"+filename):
+        os.mkdir("../srcData/state_value/"+filename)
+    src = pd.read_csv("../srcData/offline_task/"+filename+".csv", header=0)
     src['gpu_milli'] = src['num_gpu'] * src['gpu_milli']
     task_prob_int = np.zeros((int(src["cpu_milli"].max() / 1000)+1,int(src["gpu_milli"].max() / 1000)+1))
     task_prob_float = np.zeros((int(src["cpu_milli"].max() / 1000)+1,10))
@@ -30,20 +30,20 @@ def offline_data_process(filename):
         off_task_list.append([int(temp["cpu_milli"] / 1000), round(temp["gpu_milli"] / 1000, 1)])
     off_task_list = np.array(off_task_list)
     temp = np.sum(off_task_list,axis=0)
-    np.savetxt("../data_src/offline_task/"+filename+"off_task_list.csv", off_task_list, delimiter=',')
-    np.savetxt("../data_src/state_value/"+filename+"/task_prob_int.csv", task_prob_int, delimiter=',')
-    np.savetxt("../data_src/state_value/"+filename+"/task_prob_float.csv", task_prob_float, delimiter=',')
+    np.savetxt("../srcData/offline_task/"+filename+"off_task_list.csv", off_task_list, delimiter=',')
+    np.savetxt("../srcData/state_value/"+filename+"/task_prob_int.csv", task_prob_int, delimiter=',')
+    np.savetxt("../srcData/state_value/"+filename+"/task_prob_float.csv", task_prob_float, delimiter=',')
     generate_state(filename)
     data = {
         "cgr": int(temp[0] / temp[1])
     }
-    with open("../data_src/state_value/"+filename+"/data.json", "w") as json_file:
+    with open("../srcData/state_value/"+filename+"/data.json", "w") as json_file:
         json.dump(data, json_file)
     ParamHolder().cpu_gpu_rate = data["cgr"]
     return
 
 if __name__ == "__main__":
-    src = np.loadtxt("../data_src/offline_task/off_task_test.csv", delimiter=",")
+    src = np.loadtxt("../srcData/offline_task/off_task_test.csv", delimiter=",")
     temp = src.max(axis=0)
     task_prob_int = np.zeros((int(temp[0]+1),int(temp[1]+1)))
     task_prob_float = np.zeros((int(temp[0]+1),10))
@@ -57,6 +57,6 @@ if __name__ == "__main__":
         for i in range(int(temp[2])):
             off_task_list.append([temp[0],temp[1]])
     off_task_list = np.array(off_task_list)
-    np.savetxt("../data_src/offline_task/off_task_list.csv", off_task_list, delimiter=',')
-    np.savetxt("../data_src/state_value/task_prob_int.csv", task_prob_int, delimiter=',')
-    np.savetxt("../data_src/state_value/task_prob_float.csv", task_prob_float, delimiter=',')
+    np.savetxt("../srcData/offline_task/off_task_list.csv", off_task_list, delimiter=',')
+    np.savetxt("../srcData/state_value/task_prob_int.csv", task_prob_int, delimiter=',')
+    np.savetxt("../srcData/state_value/task_prob_float.csv", task_prob_float, delimiter=',')

@@ -26,7 +26,7 @@ class Robot:
                     fail_num += 1
             data = np.concatenate((node_cpu, node_gpu, node_cpu.sum() + node_gpu.sum() * ParamHolder().cpu_gpu_rate),axis=1)
             data = pd.DataFrame(data)
-            data.to_csv('../data_src/offline_task/off_task_list_data' + '.txt', index=False, header=True, sep='\t',
+            data.to_csv('../srcData/offline_task/off_task_list_data' + '.txt', index=False, header=True, sep='\t',
                         mode='a', encoding="utf-8", quoting=csv.QUOTE_NONE, escapechar=',')
 
 

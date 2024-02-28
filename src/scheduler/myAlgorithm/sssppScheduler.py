@@ -6,9 +6,9 @@ from copy import deepcopy
 class SSSPPScheduler(Scheduler):
     def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
         super().__init__(cluster,can_predict,task_mem,node_mem)
-        self.state_int = np.loadtxt("../data_src/state_value/"+ParamHolder().filename+"/state_int.csv", delimiter=",")
-        self.state_float = np.loadtxt("../data_src/state_value/"+ParamHolder().filename+"/state_float.csv", delimiter=",")
-        self.state_only_float = np.loadtxt("../data_src/state_value/"+ParamHolder().filename+"/state_only_float.csv", delimiter=",")
+        self.state_int = np.loadtxt("../srcData/state_value/"+ParamHolder().filename+"/state_int.csv", delimiter=",")
+        self.state_float = np.loadtxt("../srcData/state_value/"+ParamHolder().filename+"/state_float.csv", delimiter=",")
+        self.state_only_float = np.loadtxt("../srcData/state_value/"+ParamHolder().filename+"/state_only_float.csv", delimiter=",")
 
     def run(self, task):
         task_cpu, task_gpu = self.get_task_info(task)
@@ -163,54 +163,3 @@ def get_second_float(x):
 
 def float_to_int(x):
     return int(x * 10) % 10
-
-
-    #             if task_gpu.sum() < 1:  # gpu使用量为小数
-    #                 for j in range(len(temp_node_gpu)):
-    #                     if np.any(task_gpu[0] > temp_node_gpu[j]):
-    #                         continue
-    #                     else:
-    #                         temp_node_gpu[j] -= task_gpu[0]
-    #                         temp_priority = self.get_state_value(temp_node_cpu_old, temp_node_gpu_old,
-    #                                                              temp_node_cpu_new, temp_node_gpu)
-    #                         temp_node_gpu[j] += task_gpu[0]
-    #                         if now_priority < temp_priority:
-    #                             now_priority = temp_priority
-    #                             gpu_select = j
-    #                 if gpu_select != -1:
-    #                     now_select = node
-    #                     temp_select[gpu_select] = 0
-    #                     temp_node_gpu[gpu_select] -= task_gpu[0]
-    #             else:  # gpu使用量为整数
-    #                 temp_gpu_select = -1
-    #                 for i in range(len(task_gpu)):
-    #                     for j in range(len(temp_node_gpu)):
-    #                         if np.any(task_gpu[i] > temp_node_gpu[j]):
-    #                             continue
-    #                         else:
-    #                             temp_select[j] = i
-    #                             temp_node_gpu[j] -= task_gpu[i]
-    #                 if len(temp_select) == len(task_gpu):
-    #                     temp_priority = self.get_state_value(temp_node_cpu_old, temp_node_gpu_old, temp_node_cpu_new,
-    #                                                          temp_node_gpu)
-    #                     if now_priority < temp_priority:
-    #                         now_priority = temp_priority
-    #                         now_select = node
-    #                         gpu_select = temp_select
-    #     if now_select != -1:
-    #         self.set_task(now_select, task, gpu_select)
-    #         return True
-    #     else:
-    #         return False
-    #
-    # def get_state_value(self, temp_node_cpu_old, temp_node_gpu_old, temp_node_cpu_new, temp_node_gpu):
-    #     gpu_int_old = np.count_nonzero(temp_node_gpu_old == 1)
-    #     gpu_float_old = np.count_nonzero(temp_node_gpu_old > __zero__) - gpu_int_old
-    #     gpu_int_new = np.count_nonzero(temp_node_gpu == 1)
-    #     gpu_float_new = np.count_nonzero(temp_node_gpu > __zero__) - gpu_int_new
-    #     if gpu_int_old > gpu_int_new:
-    #         if gpu_float_old == gpu_float_new:
-    #             return self.state_int[temp_node_cpu_old][gpu_int_old] - self.state_int[[temp_node_cpu_old]][gpu_int_old]
-    #         else:
-    #             pass
-    #     return 0

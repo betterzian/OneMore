@@ -4,10 +4,12 @@ from src.scheduler.otherAlgorithm.bestFitScheduler import BestFitScheduler
 from src.scheduler.otherAlgorithm.worstFitScheduler import WorstFitScheduler
 from src.scheduler.myAlgorithm.varianceScheduler import VarianceScheduler
 from src.scheduler.myAlgorithm.oneMoreScheduler import OneMoreScheduler
+from src.scheduler.myAlgorithm.oneMoreModelScheduler import OneMoreModelScheduler
 def init_scheduler(cluster):
     schedulers = []
     can_predict = [True,False]
     for temp in can_predict:
+        schedulers.append(OneMoreModelScheduler(cluster, temp))
         schedulers.append(VarianceScheduler(cluster,temp))
         schedulers.append(OneMoreScheduler(cluster,temp))
         schedulers.append(RandomFitScheduler(cluster,temp))

@@ -15,10 +15,10 @@ def cal_smaller_task_count(task_prob_float = [], task_prob_int = [], filename = 
     """
 
     if len(task_prob_float) == 0:
-        task_prob_float_file = str("../data_src/state_value/"+filename+"/task_prob_float.csv")
+        task_prob_float_file = str("../srcData/state_value/"+filename+"/task_prob_float.csv")
         task_prob_float = np.loadtxt(task_prob_float_file, delimiter=',')
     if len(task_prob_int) == 0:
-        task_prob_int_file = str("../data_src/state_value/"+filename+"/task_prob_int.csv")
+        task_prob_int_file = str("../srcData/state_value/"+filename+"/task_prob_int.csv")
         task_prob_int = np.loadtxt(task_prob_int_file, delimiter=',')
     smaller_task_count_float = np.zeros(task_prob_float.shape)
     smaller_task_count_float[0][0] = task_prob_float[0][0]
@@ -42,8 +42,8 @@ def cal_smaller_task_count(task_prob_float = [], task_prob_int = [], filename = 
             smaller_task_count_int[i][j] = smaller_task_count_int[i][j - 1] + smaller_task_count_int[i - 1][j] - \
                                              smaller_task_count_int[i - 1][j - 1] + task_prob_int[i][j]
 
-    np.savetxt("../data_src/state_value/"+filename+"/smaller_task_count_int.csv", smaller_task_count_int, delimiter=',')
-    np.savetxt("../data_src/state_value/"+filename+"/smaller_task_count_float.csv", smaller_task_count_float, delimiter=',')
+    np.savetxt("../srcData/state_value/"+filename+"/smaller_task_count_int.csv", smaller_task_count_int, delimiter=',')
+    np.savetxt("../srcData/state_value/"+filename+"/smaller_task_count_float.csv", smaller_task_count_float, delimiter=',')
     return smaller_task_count_int.max()
 
 def beta_F(smaller_task_count, input, num):
@@ -78,11 +78,11 @@ def state_value_float(sum, task_prob_float = [], smaller_task_count_float = [], 
     """
     if len(task_prob_float) == 0:
         task_prob_float_file = str(
-            "../data_src/state_value/" + filename + "/task_prob_float.csv")
+            "../srcData/state_value/" + filename + "/task_prob_float.csv")
         task_prob_float = np.loadtxt(task_prob_float_file, delimiter=",")
     if len(smaller_task_count_float) == 0:
         smaller_task_count_float_file = str(
-            "../data_src/state_value/" + filename + "/smaller_task_count_float.csv")
+            "../srcData/state_value/" + filename + "/smaller_task_count_float.csv")
         smaller_task_count_float = np.loadtxt(smaller_task_count_float_file, delimiter=",")
     state_float = np.zeros(state_size)
     state_float[0][0] = 0
@@ -114,7 +114,7 @@ def state_value_float(sum, task_prob_float = [], smaller_task_count_float = [], 
                 state_float[i][j] = temp
         pbar.update(1)
     pbar.close()
-    np.savetxt("../data_src/state_value/" + filename + "/state_float.csv", state_float, delimiter=",")
+    np.savetxt("../srcData/state_value/" + filename + "/state_float.csv", state_float, delimiter=",")
     return state_float
 
 
@@ -130,19 +130,19 @@ def state_value_int(sum, task_prob_int = [], smaller_task_count_int = [], state_
     """
     if len(task_prob_int) == 0:
         task_prob_file_int = str(
-            "../data_src/state_value/" + filename + "/task_prob_int.csv")
+            "../srcData/state_value/" + filename + "/task_prob_int.csv")
         task_prob_int = np.loadtxt(task_prob_file_int, delimiter=",")
     if len(smaller_task_count_int) == 0:
         smaller_task_count_file_int = str(
-            "../data_src/state_value/" + filename + "/smaller_task_count_int.csv")
+            "../srcData/state_value/" + filename + "/smaller_task_count_int.csv")
         smaller_task_count_int = np.loadtxt(smaller_task_count_file_int, delimiter=",")
     if len(state_float) == 0:
         state_float_file = str(
-            "../data_src/state_value/" + filename + "/state_float.csv")
+            "../srcData/state_value/" + filename + "/state_float.csv")
         state_float = np.loadtxt(state_float_file, delimiter=",")
     if len(state_only_float) == 0:
         state_only_float_file = str(
-            "../data_src/state_value/" + filename + "/state_only_float.csv")
+            "../srcData/state_value/" + filename + "/state_only_float.csv")
         state_only_float = np.loadtxt(state_only_float_file, delimiter=",")
     state_int = np.zeros(state_size)
     state_int[0][0] = 0
@@ -180,17 +180,17 @@ def state_value_int(sum, task_prob_int = [], smaller_task_count_int = [], state_
                 state_int[i][j] = temp
         pbar.update(1)
     pbar.close()
-    np.savetxt("../data_src/state_value/" + filename + "/state_int.csv", state_int, delimiter=",")
+    np.savetxt("../srcData/state_value/" + filename + "/state_int.csv", state_int, delimiter=",")
     return state_int
 
 def state_value_only_float(sum, task_prob_float = [], smaller_task_count_float = [], prob = 0.05, filename = None):
     if len(task_prob_float) == 0:
         task_prob_file_float = str(
-            "../data_src/state_value/" + filename + "/task_prob_float.csv")
+            "../srcData/state_value/" + filename + "/task_prob_float.csv")
         task_prob_float = np.loadtxt(task_prob_file_float, delimiter=",")
     if len(smaller_task_count_float) == 0:
         smaller_task_count_file_float = str(
-            "../data_src/state_value/" + filename + "/smaller_task_count_float.csv")
+            "../srcData/state_value/" + filename + "/smaller_task_count_float.csv")
         smaller_task_count_float = np.loadtxt(smaller_task_count_file_float, delimiter=",")
     state_only_float = np.zeros(10)
     state_only_float[0] = 0
@@ -209,7 +209,7 @@ def state_value_only_float(sum, task_prob_float = [], smaller_task_count_float =
             state_only_float[j] = temp
         pbar.update(1)
         pbar.close()
-    np.savetxt("../data_src/state_value/" + filename + "/state_only_float.csv", state_only_float, delimiter=",")
+    np.savetxt("../srcData/state_value/" + filename + "/state_only_float.csv", state_only_float, delimiter=",")
     return state_only_float
 
 def generate_state(filename):
