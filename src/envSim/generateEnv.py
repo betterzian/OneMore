@@ -7,12 +7,13 @@ import os
 from src.envSim.timeSim import TimeHolder
 from src.envSim.simParam import ParamHolder
 
-def generate_offline_task_list(src_task=[],task_num=ParamHolder().offline_task_num,src_task_file = str("../srcData/state_value/"+ParamHolder().filename+"/off_task_list.csv"),all=False):
-    # if ParamHolder().filename == "node":
+
+def generate_offline_task_list(src_task=[], task_num=ParamHolder().offline_task_num, src_task_file=str(
+    "../srcData/state_value/" + ParamHolder().filename + "/off_task_list.csv"), all=False):
     if task_num == 0:
         return []
     if len(src_task) == 0:
-        src_task = np.loadtxt(src_task_file, delimiter=',',dtype=float)
+        src_task = np.loadtxt(src_task_file, delimiter=',', dtype=float)
     if all:
         return src_task
     np.random.shuffle(src_task)
@@ -23,7 +24,9 @@ def generate_offline_task_list(src_task=[],task_num=ParamHolder().offline_task_n
         task_list.append(
             Task(id=i, cpu=round(temp[0]), gpu=temp[1],
                  time_len=random.randint(90, time_len - 1),
-                 arrive_time=random.randint(0, time_len - 1)))
+                 arrive_time=random.randint(0, time_len - 1)
+                 #arrive_time=0
+                 ))
     task_list = sorted(task_list, key=lambda task: -task.get_arrive_time())
     return task_list
     # else:

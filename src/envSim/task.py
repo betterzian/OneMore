@@ -21,8 +21,8 @@ class Task:
         self.__start_time = -1
         self.__arrive_time = arrive_time
         self.__gpu_site = {}
-        if gpu == 0:
-            self.__gpu.append(CpuGpu(0, self.__time_len, time_flag))
+        if gpu < 1:
+            self.__gpu.append(CpuGpu(gpu, self.__time_len, time_flag))
         else:
             while gpu > 0:
                 self.__gpu.append(CpuGpu(1, self.__time_len, time_flag))
