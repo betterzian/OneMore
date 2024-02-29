@@ -31,6 +31,7 @@ class Scheduler:
         self.rate = ParamHolder().cpu_gpu_rate
         self.__time = 0
         self.force_num = 0
+
     @abstractmethod
     def run(self,task:Task):
         pass

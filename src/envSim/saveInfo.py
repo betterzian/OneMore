@@ -45,6 +45,7 @@ def save_info(scheduler: Scheduler):
     args_dict["offline_task_num"] = ParamHolder().offline_task_num
     args_dict["node_type"] = [ParamHolder().node_type]
     args_dict["node_num"] = [ParamHolder().node_num]
+    args_dict["cpu_gpu_rate"] = [ParamHolder().cpu_gpu_rate]
 
     str_list = pd.DataFrame.from_dict(args_dict)
     str_list.to_csv('../output/scheduler_result_'+str(ParamHolder().csv_name)+'.txt', index=False, header=True, sep='\t', mode='a', encoding="utf-8",quoting=csv.QUOTE_NONE, escapechar=',')

@@ -38,6 +38,8 @@ class TimeSim:
     def get_time(self):
         return self.__time
 
+    def init_again(self,args_list):
+        self.__init__(args_list)
 
 class TimeHolder:
     _instances = {}

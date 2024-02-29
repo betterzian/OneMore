@@ -2,10 +2,12 @@ from src.scheduler.schedulerClass import Scheduler
 from src.envSim.simParam import ParamHolder
 import numpy as np
 from copy import deepcopy
+from src.envSim.offlineTaskDataProcess import offline_data_process
 
 class SSSPPScheduler(Scheduler):
     def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
         super().__init__(cluster,can_predict,task_mem,node_mem)
+
         self.state_int = np.loadtxt("../srcData/state_value/"+ParamHolder().filename+"/state_int.csv", delimiter=",")
         self.state_float = np.loadtxt("../srcData/state_value/"+ParamHolder().filename+"/state_float.csv", delimiter=",")
         self.state_only_float = np.loadtxt("../srcData/state_value/"+ParamHolder().filename+"/state_only_float.csv", delimiter=",")

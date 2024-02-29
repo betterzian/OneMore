@@ -1,13 +1,9 @@
-from src.envSim.timeSim import TimeHolder
-from envSim.generateEnv import generate_cluster, generate_online_task_list,generate_offline_task_list
-from envSim.saveInfo import save_info
-from scheduler.schedulerList import init_scheduler
-from multiprocessing import Pool
-from tqdm import tqdm
-from src.envSim.simParam import ParamHolder
-from src.envSim.TXTtoCSV import txt_to_csv
+
 
 def run(scheduler, online_task_list, offline_task_list):
+    from src.envSim.timeSim import TimeHolder
+    from envSim.saveInfo import save_info
+    from tqdm import tqdm
     force_schedule = True
     if len(offline_task_list) == 0:
         force_schedule = False
@@ -19,7 +15,8 @@ def run(scheduler, online_task_list, offline_task_list):
         if not isOk:
             fail_task.append(now_task)
     save_info(scheduler)
-    pbar = tqdm(total=TimeHolder().get_time_left(), desc=type(scheduler).__name__ + "," + str(scheduler.get_can_predict()))
+    pbar = tqdm(total=TimeHolder().get_time_left(),
+                desc=type(scheduler).__name__ + "," + str(scheduler.get_can_predict()))
     reschedule_task = []
     while TimeHolder().get_fake_time_left() > 0:
         for node in scheduler.cluster:
@@ -69,12 +66,18 @@ def run(scheduler, online_task_list, offline_task_list):
     save_info(scheduler)
     pbar.close()
 
-def sim_run(multi_bool = True):
+
+def sim_run(test=False):
+    from src.envSim.simParam import ParamHolder
+    from envSim.generateEnv import generate_cluster, generate_online_task_list, generate_offline_task_list
+    from scheduler.schedulerList import init_scheduler
+    from multiprocessing import Pool
+    from src.envSim.TXTtoCSV import txt_to_csv
     cluster = generate_cluster()
     online_task_list = generate_online_task_list()
     offline_task_list = generate_offline_task_list()
     schedulers = init_scheduler(cluster)
-    if multi_bool:
+    if not test:
         p = Pool(len(schedulers))
         for scheduler in schedulers:
             p.apply_async(run, args=(scheduler, online_task_list, offline_task_list))
