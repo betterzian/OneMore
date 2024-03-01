@@ -9,7 +9,7 @@ class RandomFitScheduler(Scheduler):
     def run(self,task):
         task_cpu,task_gpu = self.get_task_info(task)
         now_select = -1
-        gpu_select = -1
+        gpu_select = {}
         random.shuffle(self.cluster)
         for node in self.cluster:
             temp_select = {}

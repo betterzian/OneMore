@@ -14,10 +14,13 @@ class ModelScheduler(Scheduler):
 
     def run(self, task):
         task_cpu, task_gpu = self.get_task_info(task)
-        task_gpu = task_gpu[:, 0]
+        if len(task_gpu) == 0:
+            task_gpu = np.array([0])
+        else:
+            task_gpu = task_gpu[:, 0]
         now_priority = -1e8
         now_select = -1
-        gpu_select = -1
+        gpu_select = {}
         for node in self.cluster:
             temp_select = {}
             temp_node_cpu, temp_node_gpu = self.get_node_info(node)
@@ -34,7 +37,14 @@ class ModelScheduler(Scheduler):
                 old_state[1:1+len(temp_new_node_gpu)] = temp_new_node_gpu
                 old_value = self.__state_value(torch.tensor(old_state,dtype=torch.float32).to(self.__device))
                 task_gpu = task_gpu.sum()
-                if task_gpu < 1:
+                if task_gpu == 0:
+                    new_state = old_state - 0
+                    new_state[0] = temp_new_state_0
+                    new_value = self.__state_value(torch.tensor(new_state,dtype=torch.float32).to(self.__device))
+                    if now_priority < old_value - new_value:
+                        gpu_select = {}
+                        now_select = node
+                elif task_gpu < 1:
                     gpu_list = []
                     gpu_num = []
                     for i in range(len(temp_node_gpu)):
@@ -58,6 +68,7 @@ class ModelScheduler(Scheduler):
                             now_select = node
                 else:
                     j = 0
+                    new_state = np.zeros(9)
                     temp_task_gpu = task_gpu
                     for i in range(len(temp_node_gpu)):
                         if temp_task_gpu > 0 and temp_node_gpu[i] == 1:

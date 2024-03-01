@@ -60,7 +60,7 @@ class Task:
 
 
     def get_gpu_info(self,canPredict = True):
-        if self.__arrive_time < 0:
+        if self.__max_gpu == 0:
             return []
         temp = []
         if canPredict:

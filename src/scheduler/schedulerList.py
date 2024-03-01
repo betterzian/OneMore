@@ -7,11 +7,11 @@ from src.scheduler.myAlgorithm.oneMoreScheduler import OneMoreScheduler
 from src.scheduler.myAlgorithm.oneMoreModelScheduler import OneMoreModelScheduler
 def init_scheduler(cluster):
     schedulers = []
-    can_predict = [True,False]
+    can_predict = [False,True]
     for temp in can_predict:
-        schedulers.append(OneMoreModelScheduler(cluster,temp))
-        schedulers.append(VarianceScheduler(cluster,temp))
+        #schedulers.append(OneMoreModelScheduler(cluster,temp))
         schedulers.append(OneMoreScheduler(cluster,temp))
+        schedulers.append(VarianceScheduler(cluster,temp))
         schedulers.append(RandomFitScheduler(cluster,temp))
         schedulers.append(BestFitScheduler(cluster,temp))
         schedulers.append(WorstFitScheduler(cluster,temp))

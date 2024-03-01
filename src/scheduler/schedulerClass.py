@@ -67,7 +67,9 @@ class Scheduler:
 
     def __return_task_mem(self,mem):
         cpu = mem[0][:self.__task_len]
-        gpu = mem[1][:,:self.__task_len]
+        gpu = mem[1]
+        if len(gpu) != 0:
+            gpu = gpu[:,:self.__task_len]
         return cpu,gpu
 
     def get_task_info(self,task:Task):

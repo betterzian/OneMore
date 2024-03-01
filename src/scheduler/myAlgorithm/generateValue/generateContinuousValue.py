@@ -7,7 +7,7 @@ import math
 from tqdm import tqdm
 import os
 from torch.utils.tensorboard import SummaryWriter
-from src.envSim.simParam import ParamHolder
+import json
 
 class StateValue(nn.Module):
     def __init__(self, state_dim):
@@ -87,22 +87,25 @@ class BufferArray:
 
 
 class TrainBot():
-    def __init__(self,lr = 0.001,epoch = 2000):
+    def __init__(self,filename,lr = 0.0005,epoch = 2000):
         self.__lr = lr
+        self.__filename = filename
         self.__epoch = epoch
         self.__device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.__state_value = StateValue(9).to(self.__device)
         self.__state_value.train()
-        if os.path.exists("../srcData/offline_task/"+ParamHolder().filename+"_model/model.pth"):
-            self.__state_value.load_state_dict(torch.load("../srcData/offline_task/"+ParamHolder().filename+"_model/model.pth"))
+        if os.path.exists("../srcData/offline_task/"+self.__filename+"_model/model.pth"):
+            self.__state_value.load_state_dict(torch.load("../srcData/offline_task/"+self.__filename+"_model/model.pth"))
+        elif not os.path.exists("../srcData/offline_task/"+self.__filename+"_model"):
+            os.mkdir("../srcData/offline_task/"+self.__filename+"_model")
         self.__optimizer = torch.optim.Adam(self.__state_value.parameters(), lr=self.__lr)
-        self.__criterion = nn.MSELoss()
-        self.__task_list = np.loadtxt("../srcData/state_value/"+ParamHolder().filename+"/off_task_list.csv", delimiter=',', dtype=float)
+        self.__criterion = nn.HuberLoss(reduction='mean')
+        self.__task_list = np.loadtxt("../srcData/state_value/"+self.__filename+"/off_task_list.csv", delimiter=',', dtype=float)
         self.__task_len = len(self.__task_list)
-        self.__cpu_gpu_rate = ParamHolder().cpu_gpu_rate
+        self.__cpu_gpu_rate = self.__get_cgr(self.__filename)
         self.__reply_buffer = BufferArray(409600)
         self.__reply_buffer_with_real_state = BufferArray(409600)
-        self.__writer = SummaryWriter("../log/"+ParamHolder().filename+"_model")
+        self.__writer = SummaryWriter("../log/"+self.__filename+"_model")
 
     def train(self):
         pbar = tqdm(total=self.__epoch,desc="epoch")
@@ -132,13 +135,14 @@ class TrainBot():
                     self.__reply_buffer_with_real_state.add_memo(state, next_state, temp_len, state_value)
                 if count % 500 == 0:
                     loss += self.update(count)
-                    pbar.set_description(f"Loss: {loss/(int(count/100) + 1)}")
-                    self.__writer.add_scalar("avg_loss", loss/(int(count/100) + 1), turn)
+                    pbar.set_description(f"Loss: {loss/(int(count/500) + 1)}")
+                if count % 2000 == 0:
+                    self.__writer.add_scalar("avg_loss", loss / (int(count / 500) + 1), turn)
                     turn += 1
             pbar.update(1)
-            torch.save(self.__state_value.state_dict(), "../srcData/offline_task/"+ParamHolder().filename+"_model/model.pth")
+            torch.save(self.__state_value.state_dict(), "../srcData/offline_task/"+self.__filename+"_model/model.pth")
         pbar.close()
-        torch.save(self.__state_value.state_dict(), "../srcData/offline_task/"+ParamHolder().filename+"_model/model.pth")
+        torch.save(self.__state_value.state_dict(), "../srcData/offline_task/"+self.__filename+"_model/model.pth")
 
     def update(self,count):
         epoch = 6 - int(count/500)
@@ -168,6 +172,16 @@ class TrainBot():
     def __get_next_state(self, state, task):
         return get_next_state(state, task)
 
+
+    def __get_cgr(self,filename):
+        if os.path.exists("../srcData/state_value/" + filename + "/state_int.csv"):
+            with open("../srcData/state_value/" + filename + "/data.json", "r") as json_file:
+                data = json.load(json_file)
+                return data["cgr"]
+        else:
+            return 0
+
+
     def __generate_state(self, i, cpu_max=129, gpu_max=10):
         gpu_max = int(gpu_max * min(1.0 , math.tanh(2 * i / self.__epoch))) + 1
         #gpu_max = gpu_max - int(gpu_max * ((self.__epoch - i) + 1) / (self.__epoch + 2))
@@ -189,6 +203,10 @@ class TrainBot():
 def get_next_state(state, task):
     if state[0] < task[0]:
         return None
+    if task[1] == 0:
+        next_state = state - 0
+        next_state[0] -= task[0]
+        return next_state.reshape(-1, 9)
     if task[1] < 1:
         diag_matrix = np.diag(np.ones(8) * task[1])
         next_state = state[1:] - diag_matrix
@@ -214,5 +232,6 @@ def get_next_state(state, task):
     return next_state.reshape(-1, 9)
 
 if __name__ == "__main__":
-    train_bot = TrainBot()
-    train_bot.train()
+    for filename in ["openb_pod_list_gpushare100","node","openb_pod_list_multigpu50"]:
+        train_bot = TrainBot(filename)
+        train_bot.train()

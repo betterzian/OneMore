@@ -24,7 +24,7 @@ class CpuGpu(TimeBlockSim):
         if len < 0:#返回所有资源信息
             return self.__data[self.__time_flag:]
         temp_time_flag = TimeHolder().get_time() + self.__time_flag
-        return self.__data[temp_time_flag:temp_time_flag + len].copy() #返回当前时刻后的资源
+        return self.__data[temp_time_flag:temp_time_flag + len] - 0 #返回当前时刻后的资源
 
     def check(self):
         time = TimeHolder().get_time() + TimeHolder().get_time_init_flag()

@@ -8,7 +8,7 @@ class VarianceScheduler(Scheduler):
         task_cpu, task_gpu = self.get_task_info(task)
         now_priority = -99999999999.0
         now_select = -1
-        gpu_select = -1
+        gpu_select = {}
         for node in self.cluster:
             temp_select = {}
             temp_node_cpu, temp_node_gpu = self.get_node_info(node)

@@ -14,14 +14,18 @@ class SSSPPScheduler(Scheduler):
 
     def run(self, task):
         task_cpu, task_gpu = self.get_task_info(task)
-
-        task_gpu = task_gpu[:, 0]
+        if len(task_gpu) == 0:
+            task_gpu = np.array([0])
+        else:
+            task_gpu = task_gpu[:, 0]
         now_priority = -1e8
         now_select = -1
-        gpu_select = -1
+        gpu_select = {}
         for node in self.cluster:
+            temp_node_select = -1
             select = -1
             temp_select = {}
+            temp_gpu_select = {}
             temp_node_cpu, temp_node_gpu = self.get_node_info(node)
             temp_node_gpu = temp_node_gpu[:, 0]
             if np.any(task_cpu > temp_node_cpu):
@@ -52,15 +56,14 @@ class SSSPPScheduler(Scheduler):
                                        self.state_only_float[float_to_int(temp_node_gpu[select] - task_gpu.sum())]
                             if now_priority < temp_old - temp_new:
                                 now_priority = temp_old - temp_new
-                                now_select = node
+                                temp_node_select = node
                                 temp_select[select] = 0
                     else:
                         max_float_site = get_max_float(temp_node_gpu)
                         state_old = self.state_float[int(temp_node_cpu)][float_to_int(temp_node_gpu[max_float_site])]
                         temp = -1e8
                         for j in range(len(temp_node_gpu)):
-                            if temp_node_gpu[j] == 1:
-                                continue
+                            assert temp_node_gpu[j] != 1,"temp_node_gpu[j] == 1"
                             if j == max_float_site:
                                 continue
                             item = temp_node_gpu[j]
@@ -79,9 +82,8 @@ class SSSPPScheduler(Scheduler):
                                            float_to_int(temp_node_gpu[select] - task_gpu.sum())]
                             if now_priority < temp_old - temp_new:
                                 now_priority = temp_old - temp_new
-                                now_select = node
+                                temp_node_select = node
                                 temp_select[select] = 0
-
                         if temp_node_gpu[max_float_site] > task_gpu.sum():
                             if gpu_float_old == 1 or temp_node_gpu[max_float_site] - task_gpu.sum() > \
                                     temp_node_gpu[get_second_float(temp_node_gpu)]:
@@ -95,12 +97,13 @@ class SSSPPScheduler(Scheduler):
                                                float_to_int(temp_node_gpu[max_float_site] - task_gpu.sum())]
                             if now_priority < temp_old - temp_new:
                                 now_priority = temp_old - temp_new
-                                now_select = node
+                                temp_node_select = node
+                                temp_select = {}
                                 temp_select[get_second_float(temp_node_gpu)] = 0
-                if select != -1:
-                    gpu_select = temp_select
-                    continue
-
+                # if temp_node_select != -1:
+                #     gpu_select = temp_select
+                #     now_select = temp_node_select
+                #     continue
                 max_float_site = get_max_float(temp_node_gpu)
                 if gpu_int_old >= task_gpu.sum():
                     state_old = self.state_int[int(temp_node_cpu)][int(gpu_int_old)]
@@ -109,18 +112,18 @@ class SSSPPScheduler(Scheduler):
                         temp_new = self.state_float[int(temp_node_cpu - task_cpu)][
                                        float_to_int(temp_node_gpu[max_float_site])] + self.state_only_float[
                                        float_to_int(gpu_int_old - task_gpu.sum())]
-                    elif (gpu_int_old - task_gpu.sum()) < 0:
+                    elif task_gpu.sum() < 1:
                         temp_old = state_old
-                        temp_new = self.state_float[int(temp_node_cpu - task_cpu)][
-                            float_to_int(gpu_int_old - task_gpu.sum())]
+                        if gpu_int_old == 1:
+                            temp_new = self.state_float[int(temp_node_cpu - task_cpu)][float_to_int(gpu_int_old - task_gpu.sum())]
+                        else:
+                            temp_new = self.state_int[int(temp_node_cpu)][int(gpu_int_old) - 1] + self.state_float[int(temp_node_cpu - task_cpu)][float_to_int(gpu_int_old - task_gpu.sum())]
                     else:
                         temp_old = state_old
-                        temp_new = self.state_int[int(temp_node_cpu - task_cpu)][
-                                       int(gpu_int_old - task_gpu.sum())] + self.state_only_float[
-                                       float_to_int(gpu_int_old - task_gpu.sum())]
+                        temp_new = self.state_int[int(temp_node_cpu - task_cpu)][int(gpu_int_old - task_gpu.sum())]
                     if now_priority < temp_old - temp_new:
                         now_priority = temp_old - temp_new
-                        now_select = node
+                        temp_node_select = node
                         for i in range(len(task_gpu)):
                             for j in range(len(temp_node_gpu)):
                                 if np.any(task_gpu[i] > temp_node_gpu[j]):
@@ -129,9 +132,12 @@ class SSSPPScheduler(Scheduler):
                                     temp_select[j] = i
                                     temp_node_gpu[j] -= task_gpu[i]
                                     break
-                        assert len(temp_select) == len(task_gpu),"len(temp_select) != len(task_gpu)"
+                    if len(task_gpu) == len(temp_select):
+                        now_select = temp_node_select
                         gpu_select = temp_select
         if now_select != -1:
+            if task_gpu.max() == 0:
+                gpu_select = {}
             self.set_task(now_select, task, gpu_select)
             return True
         else:

@@ -9,7 +9,7 @@ import torch
 if __name__ == '__main__':
     torch.multiprocessing.set_start_method('spawn', force=True)
     parser = argparse.ArgumentParser(description='param')
-    parser.add_argument('--test', action='store_true')
+    parser.add_argument('--test', action='store_false')
     parser.add_argument('--gather', action='store_false')
     parser.add_argument('--tl', type=int, default=17280)
     parser.add_argument('--tif', type=int, default=0)

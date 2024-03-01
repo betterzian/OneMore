@@ -9,17 +9,17 @@ class BestFitScheduler(Scheduler):
         task_cpu, task_gpu = self.get_task_info(task)
         now_priority = 999999999.0
         now_select = -1
-        gpu_select = -1
+        gpu_select = {}
         for node in self.cluster:
             temp_select = {}
             temp_node_cpu, temp_node_gpu = self.get_node_info(node)
             if np.any(task_cpu > temp_node_cpu):
                 continue
             else:
-                temp_priority = np.sum(temp_node_cpu - task_cpu)
-                temp_gpu_select = -1
+                temp_priority = temp_node_cpu.sum() - task_cpu.sum() + self.rate *(temp_node_gpu.sum() - task_gpu.sum())
                 for i in range(len(task_gpu)):
                     gpu_priority = 999999999.0
+                    temp_gpu_select = -1
                     for j in range(len(temp_node_gpu)):
                         if np.any(task_gpu[i] > temp_node_gpu[j]):
                             continue
@@ -29,7 +29,6 @@ class BestFitScheduler(Scheduler):
                                 gpu_priority = temp_gpu_priority
                                 temp_gpu_select = j
                     if temp_gpu_select != -1:
-                        temp_priority += (gpu_priority*self.rate)
                         temp_select[temp_gpu_select] = i
                         temp_node_gpu[temp_gpu_select] -= task_gpu[i]
                 if len(temp_select) == len(task_gpu):
