@@ -1,14 +1,15 @@
 from src.scheduler.schedulerClass import Scheduler
 import numpy as np
 from src.scheduler.myAlgorithm.generateValue.generateContinuousValue import StateValue,get_next_state
+from src.envSim.simParam import ParamHolder
 import torch
 class ModelScheduler(Scheduler):
     def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
         super().__init__(cluster,can_predict,task_mem,node_mem)
-        self.__device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        self.__device = torch.device("cpu")
         self.__state_value = StateValue(9).to(self.__device)
-        #self.__state_value.load_state_dict(torch.load('../srcData/offline_task/model/'+ParamHolder().filename+'_model.pth'))
-        self.__state_value.load_state_dict(torch.load('../srcData/offline_task/model/off_task_list_model.pth'))
+        self.__state_value.load_state_dict(torch.load("../srcData/offline_task/"+ParamHolder().filename+"_model/model.pth"))
+        #self.__state_value.load_state_dict(torch.load('../srcData/offline_task/model/off_task_list_model.pth'))
         self.__state_value.eval()
         # self.__buffer = BufferArray(len(cluster))
 
