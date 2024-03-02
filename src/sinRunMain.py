@@ -3,8 +3,6 @@ sys.path.append("../")
 
 if __name__ == '__main__':
     import argparse
-    #import torch
-    #torch.multiprocessing.set_start_method('spawn', force=True)
     parser = argparse.ArgumentParser(description='param')
     parser.add_argument('--test', action='store_true')
     parser.add_argument('--gather', action='store_false')
@@ -24,8 +22,6 @@ if __name__ == '__main__':
     args_dict = vars(args)
     from simRun import sim_run
     sim_run(args)
-    # with open('../tmp/'+ParamHolder().csv_name+'.txt', 'a') as file:
-    #     file.write('ok\n')
 
 
 
