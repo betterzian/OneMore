@@ -1,5 +1,3 @@
-
-
 def run(scheduler, online_task_list, offline_task_list):
     from src.envSim.timeSim import TimeHolder
     from envSim.saveInfo import save_info
@@ -67,7 +65,13 @@ def run(scheduler, online_task_list, offline_task_list):
     pbar.close()
 
 
-def sim_run(test=False):
+def sim_run(args_dict):
+    from src.envSim.simParam import ParamHolder
+    ParamHolder(args_dict)
+    from src.envSim.offlineTaskDataProcess import offline_data_process
+    ParamHolder().cpu_gpu_rate = offline_data_process(ParamHolder().filename)
+    args_dict["cgr"] = ParamHolder().cpu_gpu_rate
+    args_dict["csv_name"] = ParamHolder().csv_name
     from src.envSim.simParam import ParamHolder
     from envSim.generateEnv import generate_cluster, generate_online_task_list, generate_offline_task_list
     from scheduler.schedulerList import init_scheduler
@@ -77,7 +81,7 @@ def sim_run(test=False):
     online_task_list = generate_online_task_list()
     offline_task_list = generate_offline_task_list()
     schedulers = init_scheduler(cluster)
-    if not test:
+    if not args_dict["test"]:
         p = Pool(len(schedulers))
         for scheduler in schedulers:
             p.apply_async(run, args=(scheduler, online_task_list, offline_task_list))

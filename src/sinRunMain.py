@@ -1,12 +1,9 @@
 import sys
 sys.path.append("../")
-import argparse
-from src.envSim.simParam import ParamHolder
-from src.envSim.offlineTaskDataProcess import offline_data_process
-import json
-import torch
 
 if __name__ == '__main__':
+    import argparse
+    #import torch
     #torch.multiprocessing.set_start_method('spawn', force=True)
     parser = argparse.ArgumentParser(description='param')
     parser.add_argument('--test', action='store_true')
@@ -25,33 +22,14 @@ if __name__ == '__main__':
     parser.add_argument('--csv_name', type=str, default=None)
     args = parser.parse_args()
     args_dict = vars(args)
-    ParamHolder(args_dict)
-    ParamHolder().cpu_gpu_rate = offline_data_process(ParamHolder().filename)
-    args_dict["cgr"] = ParamHolder().cpu_gpu_rate
-    args_dict["csv_name"] = ParamHolder().csv_name
-    args_dict["reader"] = 0
-    # ok = False
-    # while not ok:
-    #     if os.path.exists("../tmp/param/args.json"):
-    #         with open("../tmp/param/args.json", "r+") as json_file:
-    #             temp_args_list = json.load(json_file)
-    #             if temp_args_list["reader"] == 2:
-    #                 json_file.seek(0)
-    #                 json_file.truncate()
-    #                 json.dump(args_dict, json_file)
-    #                 ok = True
-    #         time.sleep(10)
-    #     else:
-    with open("../tmp/param/args.json", "w") as json_file:
-        json.dump(args_dict, json_file)
-        ok = True
-    # if args.gather:
-    #     pass
-    # else:
     from simRun import sim_run
-    sim_run(args.test)
-    with open('../tmp/'+ParamHolder().csv_name+'.txt', 'a') as file:
-        file.write('ok\n')
+    sim_run(args)
+    # with open('../tmp/'+ParamHolder().csv_name+'.txt', 'a') as file:
+    #     file.write('ok\n')
+
+
+
+
 
 
 
