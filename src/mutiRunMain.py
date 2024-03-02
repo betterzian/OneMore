@@ -10,7 +10,7 @@ from src.envSim.TXTtoCSV import txt_to_csv
 if __name__ == "__main__":
     current_time = datetime.now()
     parser = argparse.ArgumentParser(description='param')
-    parser.add_argument('--num', type=int, default=14)
+    parser.add_argument('--num', type=int, default=60)
     args = parser.parse_args()
     csv_name = str(current_time.year) + "_" + str(current_time.month) + "_" + str(
         current_time.day) + "_" + str(current_time.hour) + "_" + str(current_time.minute) + "_" + str(
@@ -19,7 +19,8 @@ if __name__ == "__main__":
     tcp_list = [1080,2160,4320,8640]
     tap_list = [30,90,180,360]
     ontn_list  = {1000:[600,700,800],3000:[600,700,800],5000:[600,700,800]}
-    filename_list = ["node", "openb_pod_list_gpushare100", "openb_pod_list_multigpu50"]
+    #filename_list = ["node", "openb_pod_list_gpushare100", "openb_pod_list_multigpu50"]
+    filename_list = ["openb_pod_list_multigpu50"]
     sum_process = args.num
     now_process = 0
     for filename in filename_list:

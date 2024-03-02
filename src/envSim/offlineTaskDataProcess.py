@@ -13,7 +13,6 @@ def offline_data_process(filename):
         with open("../srcData/state_value/"+filename+"/data.json", "r") as json_file:
             data = json.load(json_file)
             ParamHolder().cpu_gpu_rate = data["cgr"]
-            print(data["cgr"])
             return data["cgr"]
     elif not os.path.exists("../srcData/state_value/"+filename):
         os.mkdir("../srcData/state_value/"+filename)
@@ -30,7 +29,7 @@ def offline_data_process(filename):
         off_task_list = []
         for temp in src.values:
             for i in range(int(temp[2])):
-                off_task_list.append([temp[0], temp[1]])
+                off_task_list.append([round(temp[0]), temp[1]])
         off_task_list = np.array(off_task_list)
         temp = np.sum(off_task_list, axis=0)
         np.savetxt("../srcData/state_value/"+filename+"/off_task_list.csv", off_task_list, delimiter=',')
@@ -48,7 +47,7 @@ def offline_data_process(filename):
                 task_prob_float[int(temp["cpu_milli"] / 1000)][float_to_int(round(temp["gpu_milli"] / 1000, 1))] += 1
             else:
                 task_prob_int[int(temp["cpu_milli"] / 1000)][int(temp["gpu_milli"] / 1000)] += 1
-            off_task_list.append([round(temp["cpu_milli"] / 1000, 1), round(temp["gpu_milli"] / 1000, 1)])
+            off_task_list.append([round(temp["cpu_milli"] / 1000), round(temp["gpu_milli"] / 1000, 1)])
         off_task_list = np.array(off_task_list)
         temp = np.sum(off_task_list,axis=0)
         np.savetxt("../srcData/state_value/"+filename+"/off_task_list.csv", off_task_list, delimiter=',')
@@ -57,11 +56,10 @@ def offline_data_process(filename):
     data = {
         "cgr": int(temp[0] / temp[1])
     }
-    ParamHolder().cpu_gpu_rate = data
+    ParamHolder().cpu_gpu_rate = data["cgr"]
     generate_state(filename)
     with open("../srcData/state_value/"+filename+"/data.json", "w") as json_file:
         json.dump(data, json_file)
-    print(data["cgr"])
     return data["cgr"]
 
 if __name__ == "__main__":

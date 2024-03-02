@@ -18,32 +18,62 @@ class Scheduler:
         self.__can_predict = can_predict
         self.__time_can_predict = time_can_predict #可预测时间长度，如=720，720 *10 = 7200s
         self.__time_block_size = time_block_size #单个预测值代表的时间长度，如=90，90*10 = 900s
-        self.reschedule_num = 0
-        self.success_num = 0
-        self.fail_num = 0
-        self.__task_len = 0
+        self._reschedule_num = 0
+        self._success_num = 0
+        self._fail_num = 0
+        self._task_len = 0
         self._task_mem = task_mem
         self._node_mem = node_mem
-        self.node_cache_num = 0
-        self.task_cache_num = 0
-        self.node_no_cache_num = 0
-        self.task_no_cache_num = 0
-        self.rate = ParamHolder().cpu_gpu_rate
-        self.__time = 0
-        self.force_num = 0
+        self._node_cache_num = 0
+        self._task_cache_num = 0
+        self._node_no_cache_num = 0
+        self._task_no_cache_num = 0
+        self._rate = ParamHolder().cpu_gpu_rate
+        self._time = 0
+        self._force_num = 0
 
     @abstractmethod
     def run(self,task:Task):
         pass
 
+    def add_reschedule_num(self,num=1):
+        self._reschedule_num += num
+
+    def add_fail_num(self,num=1):
+        self._fail_num += num
+
     def get_can_predict(self):
         return self.__can_predict
 
     def set_time(self):
-        self.__time = time.time() - self.__time
+        self._time = time.time() - self._time
 
     def get_time(self):
-        return self.__time
+        return self._time
+
+    def get_reschedule_num(self):
+        return self._reschedule_num
+
+    def get_fail_num(self):
+        return self._fail_num
+
+    def get_task_len(self):
+        return self._task_len
+
+    def get_node_cache_num(self):
+        return self._node_cache_num
+
+    def get_task_cache_num(self):
+        return self._task_cache_num
+
+    def get_node_no_cache_num(self):
+        return self._node_no_cache_num
+
+    def get_task_no_cache_num(self):
+        return self._task_no_cache_num
+
+    def get_force_num(self):
+        return self._force_num
 
     def __deal_data(self,temp_cpu,temp_gpu,func):
         cpu = temp_cpu[0:ParamHolder().time_accurately_predict]
@@ -66,10 +96,10 @@ class Scheduler:
         return cpu,gpu
 
     def __return_task_mem(self,mem):
-        cpu = mem[0][:self.__task_len]
+        cpu = mem[0][:self._task_len]
         gpu = mem[1]
         if len(gpu) != 0:
-            gpu = gpu[:,:self.__task_len]
+            gpu = gpu[:,:self._task_len]
         return cpu,gpu
 
     def get_task_info(self,task:Task):
@@ -77,15 +107,15 @@ class Scheduler:
         temp_cpu = task.get_cpu_info(self.__can_predict)
         min_len = min(len(temp_cpu),self.__time_can_predict,TimeHolder().get_time_left())
         if min_len <= ParamHolder().time_accurately_predict:
-            self.__task_len = min_len
+            self._task_len = min_len
         else:
-            self.__task_len = ParamHolder().time_accurately_predict + math.ceil((min_len - ParamHolder().time_accurately_predict)/ParamHolder().time_block_size)
+            self._task_len = ParamHolder().time_accurately_predict + math.ceil((min_len - ParamHolder().time_accurately_predict) / ParamHolder().time_block_size)
         if task.get_arrive_time() >= 0: #为离线任务，每次获取的信息应该相同，可以写入缓存中加速
             if task.get_id() not in self._task_mem:
                 self._task_mem[task.get_id()] = Mem()
             task_mem = self._task_mem[task.get_id()]
             if task_mem.mem is not None:
-                self.task_cache_num += 1
+                self._task_cache_num += 1
                 return self.__return_task_mem(task_mem.mem)
         if self.__can_predict:
             temp_cpu = temp_cpu[:min_len]
@@ -100,7 +130,7 @@ class Scheduler:
         if task_mem is None:
             return cpu,gpu
         task_mem.mem = (cpu,gpu)
-        self.task_no_cache_num += 1
+        self._task_no_cache_num += 1
         return self.__return_task_mem(task_mem.mem)
 
     def get_node_info(self,node:Node):
@@ -108,7 +138,7 @@ class Scheduler:
             self._node_mem[node.get_id()] = Mem()
         node_mem = self._node_mem[node.get_id()]
         if node_mem.time == TimeHolder().get_time() and node_mem.mem is not None:
-            self.node_cache_num += 1
+            self._node_cache_num += 1
             return self.__return_task_mem(node_mem.mem)
         if self.__can_predict:
             temp_cpu = node.get_cpu_info(self.__time_can_predict)
@@ -119,7 +149,7 @@ class Scheduler:
             gpu = node.get_gpu_info(1)
         node_mem.time = TimeHolder().get_time()
         node_mem.mem = (cpu, gpu)
-        self.node_no_cache_num += 1
+        self._node_no_cache_num += 1
         return self.__return_task_mem(node_mem.mem)
 
     def set_task(self,node:Node,task:Task,gpu_site={}):
@@ -156,7 +186,7 @@ class Scheduler:
                 now_select = node
         assert now_select != -1,"在线任务无法放置"
         self.set_task(now_select,task,{})
-        self.force_num += 1
+        self._force_num += 1
         return now_select.check()
 
 

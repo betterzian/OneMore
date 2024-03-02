@@ -20,7 +20,7 @@ def run(scheduler, online_task_list, offline_task_list):
     while TimeHolder().get_fake_time_left() > 0:
         for node in scheduler.cluster:
             reschedule_task.extend(node.check())
-        scheduler.reschedule_num += len(reschedule_task)
+        scheduler.add_reschedule_num(len(reschedule_task))
         while reschedule_task:
             task = reschedule_task.pop()
             if task.get_arrive_time() < 0:
@@ -53,7 +53,7 @@ def run(scheduler, online_task_list, offline_task_list):
             isOk = scheduler.run(now_task)
             if not isOk:
                 fail_task.append(now_task)
-        scheduler.fail_num += len(fail_task)
+        scheduler.add_fail_num(len(fail_task))
         TimeHolder().add_time()
         pbar.update(1)
     scheduler.set_time()

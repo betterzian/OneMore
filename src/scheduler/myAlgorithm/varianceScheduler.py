@@ -16,7 +16,7 @@ class VarianceScheduler(Scheduler):
                 continue
             else:
                 old_priority = temp_node_cpu
-                old_priority = np.concatenate((old_priority, np.sum(temp_node_gpu, axis=0) * self.rate), axis=0)
+                old_priority = np.concatenate((old_priority, np.sum(temp_node_gpu, axis=0) * self._rate), axis=0)
                 temp_priority = temp_node_cpu - task_cpu
                 temp_gpu_select = -1
                 for i in range(len(task_gpu)):
@@ -33,7 +33,7 @@ class VarianceScheduler(Scheduler):
                         temp_select[temp_gpu_select] = i
                         temp_node_gpu[temp_gpu_select] -= task_gpu[i]
                 if len(temp_select) == len(task_gpu):
-                    temp_priority = np.concatenate((temp_priority, np.sum(temp_node_gpu, axis=0) * self.rate), axis=0)
+                    temp_priority = np.concatenate((temp_priority, np.sum(temp_node_gpu, axis=0) * self._rate), axis=0)
                     temp_priority = np.var(old_priority) - np.var(temp_priority)
                     if temp_priority > now_priority:
                         now_priority = temp_priority

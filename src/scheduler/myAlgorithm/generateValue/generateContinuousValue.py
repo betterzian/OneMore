@@ -112,7 +112,7 @@ class TrainBot():
         self.__writer = SummaryWriter(path+"/log/"+self.__filename+"_model")
 
     def train(self):
-        pbar = tqdm(total=self.__epoch,desc="epoch")
+        pbar = tqdm(total=self.__epoch,desc=f"{self.__filename} epoch")
         turn = 0
         for i in range(self.__epoch):
             loss = 0
@@ -187,7 +187,7 @@ class TrainBot():
 
 
     def __generate_state(self, i, cpu_max=129, gpu_max=10):
-        gpu_max = int(gpu_max * min(1.0 , math.tanh(2 * i / self.__epoch))) + 1
+        gpu_max = int(gpu_max * min(1.0 , math.tanh(4.5 * i / self.__epoch))) + 1
         #gpu_max = gpu_max - int(gpu_max * ((self.__epoch - i) + 1) / (self.__epoch + 2))
         state_sum = 0
         state = np.random.randint(0, gpu_max, 9)
@@ -235,9 +235,21 @@ def get_next_state(state, task):
     state[0] = cpu
     return next_state.reshape(-1, 9)
 
+def run(filename):
+    seed = 1
+    random.seed(seed)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    train_bot = TrainBot(filename)
+    train_bot.train()
+
 if __name__ == "__main__":
-    for path in sys.path:
-        print(path)
-    for filename in ["node","openb_pod_list_gpushare100","openb_pod_list_multigpu50"]:
-        train_bot = TrainBot(filename)
-        train_bot.train()
+    from torch import multiprocessing as mp
+    filename_list = ["node","openb_pod_list_gpushare100","openb_pod_list_multigpu50"]
+    ctx = mp.get_context("spawn")
+    pool = ctx.Pool(len(filename_list))
+    for filename in filename_list:
+        pool.apply_async(run, args=(filename,))
+    pool.close()
+    pool.join()
+

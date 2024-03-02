@@ -12,3 +12,27 @@ class OneMoreModelScheduler(Scheduler):
             return self.online_scheduler.run(task)
         else:
             return self.offline_scheduler.run(task)
+
+    def get_reschedule_num(self):
+        return self._reschedule_num+self.online_scheduler.get_reschedule_num()+self.offline_scheduler.get_reschedule_num()
+
+    def get_fail_num(self):
+        return self._fail_num+self.online_scheduler.get_fail_num()+self.offline_scheduler.get_fail_num()
+
+    def get_task_len(self):
+        return self._task_len+self.offline_scheduler.get_task_len()+self.online_scheduler.get_task_len()
+
+    def get_node_cache_num(self):
+        return self._node_cache_num+self.online_scheduler.get_node_cache_num()+self.offline_scheduler.get_node_cache_num()
+
+    def get_task_cache_num(self):
+        return self._task_cache_num+self.offline_scheduler.get_task_cache_num()+self.online_scheduler.get_task_cache_num()
+
+    def get_node_no_cache_num(self):
+        return self._node_no_cache_num+self.online_scheduler.get_node_no_cache_num()+self.offline_scheduler.get_node_no_cache_num()
+
+    def get_task_no_cache_num(self):
+        return self._task_no_cache_num+self.offline_scheduler.get_task_no_cache_num()+self.online_scheduler.get_task_no_cache_num()
+
+    def get_force_num(self):
+        return self._force_num+self.offline_scheduler.get_force_num()+self.online_scheduler.get_force_num()
