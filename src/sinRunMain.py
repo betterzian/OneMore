@@ -12,18 +12,16 @@ if __name__ == '__main__':
     parser.add_argument('--tcp', type=int, default=8640)
     parser.add_argument('--tbs', type=int, default=90)
     parser.add_argument('--tap', type=int, default=90)
-    parser.add_argument('--ontn', type=int, default=1000)
+    parser.add_argument('--ontn', type=int, default=5000)
     parser.add_argument('--oftn', type=int, default=800)
-    parser.add_argument('--filename', type=str, default="openb_pod_list_multigpu50")
+    parser.add_argument('--filename', type=str, default="node")
     parser.add_argument('--nt', type=list, default=((64, 2),(64, 8),(96, 4),(96, 8),(104, 2),(128, 1),(128, 8)))
     parser.add_argument('--nn', type=tuple, default=(10,10,10,10,10,10,10))
     parser.add_argument('--csv_name', type=str, default=None)
     args = parser.parse_args()
     args_dict = vars(args)
-    file = open('../tmp/all_'+args_dict["csv_name"]+'.txt', "w")
-    file.close()
     from simRun import sim_run
-    sim_run(args)
+    sim_run(args_dict)
 
 
 

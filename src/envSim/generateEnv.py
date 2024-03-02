@@ -22,32 +22,12 @@ def generate_offline_task_list(src_task=[], task_num=ParamHolder().offline_task_
     for i in range(task_num):
         temp = src_task[random.randint(0, len(src_task) - 1)]
         task_list.append(
-            Task(id=i, cpu=round(temp[0]), gpu=temp[1],
+            Task(id=i, cpu=temp[0], gpu=temp[1],
                  time_len=random.randint(90, time_len - 1),
-                 arrive_time=random.randint(0, time_len - 1)
-                 #arrive_time=0
-                 ))
+                 arrive_time=random.randint(0, time_len - 1))
+        )
     task_list = sorted(task_list, key=lambda task: -task.get_arrive_time())
     return task_list
-    # else:
-    #     if task_num == 0:
-    #         return []
-    #     if len(src_task) == 0:
-    #         src_task = pd.read_csv(src_task_file, header=0)
-    #     src_task.drop("gpu_spec", axis=1, inplace=True)
-    #     src_task.dropna(inplace=True)
-    #     task_list = []
-    #     task_list_record = []
-    #     time_len = TimeHolder().get_fake_time_left()
-    #     for i in range(task_num):
-    #         temp = src_task.iloc[random.randint(0, len(src_task) - 1)]
-    #         task_list.append(
-    #             Task(id=i, cpu=round(temp["cpu_milli"] / 1000, 1),
-    #                  gpu=round(temp["num_gpu"] * temp["gpu_milli"] / 1000, 1),
-    #                  time_len=min(time_len - 1, int((temp["deletion_time"] - temp["scheduled_time"]) / 10 + 1)),
-    #                  arrive_time=random.randint(0, time_len - 1)))
-    #     task_list = sorted(task_list, key=lambda task: -task.get_arrive_time())
-    #     return task_list
 
 
 def generate_online_task_list(task_num=ParamHolder().online_task_num):

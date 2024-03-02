@@ -71,8 +71,10 @@ def run(scheduler, online_task_list, offline_task_list):
 def sim_run(args_dict):
     from src.envSim.simParam import ParamHolder
     ParamHolder(args_dict)
+    file = open('../tmp/all_'+ParamHolder().csv_name+'.txt', "w")
+    file.close()
     from src.envSim.offlineTaskDataProcess import offline_data_process
-    ParamHolder().cpu_gpu_rate = offline_data_process(ParamHolder().filename)
+    offline_data_process(ParamHolder().filename)
     args_dict["cgr"] = ParamHolder().cpu_gpu_rate
     args_dict["csv_name"] = ParamHolder().csv_name
     from src.envSim.simParam import ParamHolder
