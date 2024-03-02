@@ -1,11 +1,15 @@
 import torch
+import os
+path = "../../../.."
+path = os.path.abspath(path)
+import sys
+sys.path.append(path)
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 import random
 import math
 from tqdm import tqdm
-import os
 from torch.utils.tensorboard import SummaryWriter
 import json
 
@@ -94,18 +98,18 @@ class TrainBot():
         self.__device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.__state_value = StateValue(9).to(self.__device)
         self.__state_value.train()
-        if os.path.exists("../srcData/offline_task/"+self.__filename+"_model/model.pth"):
-            self.__state_value.load_state_dict(torch.load("../srcData/offline_task/"+self.__filename+"_model/model.pth"))
-        elif not os.path.exists("../srcData/offline_task/"+self.__filename+"_model"):
-            os.mkdir("../srcData/offline_task/"+self.__filename+"_model")
+        if os.path.exists(path+"/srcData/offline_task/"+self.__filename+"_model/model.pth"):
+            self.__state_value.load_state_dict(torch.load(path+"/srcData/offline_task/"+self.__filename+"_model/model.pth"))
+        elif not os.path.exists(path+"/srcData/offline_task/"+self.__filename+"_model"):
+            os.mkdir(path+"/srcData/offline_task/"+self.__filename+"_model")
         self.__optimizer = torch.optim.Adam(self.__state_value.parameters(), lr=self.__lr)
         self.__criterion = nn.HuberLoss(reduction='mean')
-        self.__task_list = np.loadtxt("../srcData/state_value/"+self.__filename+"/off_task_list.csv", delimiter=',', dtype=float)
+        self.__task_list = np.loadtxt(path+"/srcData/state_value/"+self.__filename+"/off_task_list.csv", delimiter=',', dtype=float)
         self.__task_len = len(self.__task_list)
         self.__cpu_gpu_rate = self.__get_cgr(self.__filename)
         self.__reply_buffer = BufferArray(409600)
         self.__reply_buffer_with_real_state = BufferArray(409600)
-        self.__writer = SummaryWriter("../log/"+self.__filename+"_model")
+        self.__writer = SummaryWriter(path+"/log/"+self.__filename+"_model")
 
     def train(self):
         pbar = tqdm(total=self.__epoch,desc="epoch")
@@ -140,9 +144,9 @@ class TrainBot():
                     self.__writer.add_scalar("avg_loss", loss / (int(count / 500) + 1), turn)
                     turn += 1
             pbar.update(1)
-            torch.save(self.__state_value.state_dict(), "../srcData/offline_task/"+self.__filename+"_model/model.pth")
+            torch.save(self.__state_value.state_dict(), path+"/srcData/offline_task/"+self.__filename+"_model/model.pth")
         pbar.close()
-        torch.save(self.__state_value.state_dict(), "../srcData/offline_task/"+self.__filename+"_model/model.pth")
+        torch.save(self.__state_value.state_dict(), path+"/srcData/offline_task/"+self.__filename+"_model/model.pth")
 
     def update(self,count):
         epoch = 6 - int(count/500)
@@ -232,6 +236,8 @@ def get_next_state(state, task):
     return next_state.reshape(-1, 9)
 
 if __name__ == "__main__":
-    for filename in ["openb_pod_list_gpushare100","node","openb_pod_list_multigpu50"]:
+    for path in sys.path:
+        print(path)
+    for filename in ["node","openb_pod_list_gpushare100","openb_pod_list_multigpu50"]:
         train_bot = TrainBot(filename)
         train_bot.train()
