@@ -2,6 +2,7 @@ def run(scheduler, online_task_list, offline_task_list):
     from src.envSim.timeSim import TimeHolder
     from envSim.saveInfo import save_info
     from tqdm import tqdm
+    from src.envSim.simParam import ParamHolder
     force_schedule = True
     if len(offline_task_list) == 0:
         force_schedule = False
@@ -63,6 +64,8 @@ def run(scheduler, online_task_list, offline_task_list):
         pbar.update(1)
     save_info(scheduler)
     pbar.close()
+    with open('../tmp/'+ParamHolder().csv_name+'.txt', 'a') as file:
+        file.write('ok\n')
 
 
 def sim_run(args_dict):
