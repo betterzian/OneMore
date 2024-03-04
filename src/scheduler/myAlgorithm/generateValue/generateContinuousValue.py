@@ -126,6 +126,7 @@ class BufferArray:
         self.__sin_task_len = np.ones((memo_max_len, task_num)).astype(int) * -1
         self.__next_state = np.ones((memo_max_len, task_num, state_dim-1, state_dim), dtype=np.float32) * -1
         self.__state_value = np.zeros(memo_max_len, dtype=np.float32)
+        self.__task_num_list = np.zeros(memo_max_len).astype(int)
         self.__expert_mark = np.ones((memo_max_len,task_num,state_dim-1),dtype=np.float32) * -1
         self.__task_num = task_num
         self.__state_dim = state_dim
@@ -139,13 +140,14 @@ class BufferArray:
         self.__is_full = False
         self.__now_len = self.__max_len if self.__is_full else self.__next_idx
 
-    def add_memo(self, state=None, next_state=None, sin_task_len=None, state_value=None, expert_mark=None, empty=False):
+    def add_memo(self, state=None, next_state=None, sin_task_len=None, state_value=None,task_num=None, expert_mark=None, empty=False):
         if empty:
             self.__next_idx += 1
         else:
             self.__state[self.__next_idx] = state.reshape(-1,self.__state_dim)
             self.__state_value[self.__next_idx] = state_value
-            if state_value < 0:
+            self.__task_num_list[self.__next_idx] = task_num
+            if task_num > 0:
                 self.__sin_task_len[self.__next_idx] = sin_task_len.reshape(-1, self.__task_num)
                 self.__next_state[self.__next_idx] = next_state.reshape(-1,self.__task_num, self.__state_dim-1, self.__state_dim)
                 self.__expert_mark[self.__next_idx] = expert_mark.reshape(-1,self.__task_num, self.__state_dim-1)
@@ -162,22 +164,18 @@ class BufferArray:
             batch_size = self.__now_len
         indices = np.random.randint(self.__now_len, size=batch_size)
         state = self.__state[indices]
-        sin_task_len = self.__sin_task_len[indices]
-        next_state = self.__next_state[indices]
-        state_value = self.__state_value[indices]
-        expert_mark = self.__expert_mark[indices]
-
-        state_value = state_value.reshape(-1)
-        sin_task_len = sin_task_len.reshape(-1)
+        sin_task_len = self.__sin_task_len[indices].reshape(-1)
+        next_state = self.__next_state[indices].reshape(-1,self.__state_dim)
+        state_value = self.__state_value[indices].reshape(-1)
+        task_num = self.__task_num_list[indices].reshape(-1)
+        expert_mark = self.__expert_mark[indices].reshape(-1)
         sin_task_len = sin_task_len[sin_task_len > 0]
-        next_state = next_state.reshape(-1,self.__state_dim)
-        expert_mark = expert_mark.reshape(-1)
         indices = next_state[:,0] != -1
         next_state = next_state[indices]
         expert_mark = expert_mark[indices]
         state = torch.tensor(state, device=device)
         next_state = torch.tensor(next_state, device=device)
-        return state,next_state,sin_task_len,state_value,expert_mark
+        return state,next_state,sin_task_len,state_value,task_num,expert_mark
 
 
 class TrainBot():
@@ -186,7 +184,7 @@ class TrainBot():
         self.__filename = filename
         self.__epoch = epoch
         self.__device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        self.__now_expect = 0
+        self.__now_expect = 3
         self.__trained_experts =[]
         if not os.path.exists(path + f"/srcData/offline_task/model/{self.__filename}_model"):
             os.mkdir(path + f"/srcData/offline_task/model/{self.__filename}_model")
@@ -211,6 +209,7 @@ class TrainBot():
         self.__task_len = len(self.__task_list)
         self.__cpu_gpu_rate = self.__get_cgr(self.__filename)
         self.__tl_one_time = 100
+        self.__smooth_num = int(self.__tl_one_time * 0.05)
         self.__reply_buffer = BufferArray(409600,task_num=self.__tl_one_time)
         self.__writer = SummaryWriter(path+f"/log/{self.__filename}_model")
         self.__loss = 100
@@ -229,6 +228,7 @@ class TrainBot():
                 next_state = np.ones((self.__tl_one_time,8,9), dtype=np.float32) * -1
                 expert_mark = np.zeros((self.__tl_one_time,8)).astype(int)
                 state_value = 0
+                task_num = 0
                 for j in range(len(task_list)):
                     temp_next = self.__get_next_state(state, task_list[j])
                     state_value = state_sum
@@ -238,10 +238,11 @@ class TrainBot():
                         next_state[j,0:state_len[j],:] = deal_state(temp_next,self.__cpu_gpu_rate)
                 loc = state_len > 0
                 state_len = state_len[loc]
-                if len(state_len) > 4:
-                    state_value = -len(state_len)
+                if len(state_len) > 0:
+                    task_num = len(state_len)
+                    state_value = state_sum * max(0,self.__smooth_num - task_num)
                     temp_len[:len(state_len)] = state_len
-                self.__reply_buffer.add_memo(deal_state(np.expand_dims(state,axis=0),self.__cpu_gpu_rate), next_state, temp_len, state_value, expert_mark)
+                self.__reply_buffer.add_memo(deal_state(np.expand_dims(state,axis=0),self.__cpu_gpu_rate), next_state, temp_len, state_value,task_num, expert_mark)
                 if count % 500 == 0:
                     loss += self.update_expert(count)
                     pbar.set_description(f"gpu_max: {self.__now_expect} and Loss: {loss/(int(count/500) + 1)}")
@@ -268,10 +269,9 @@ class TrainBot():
         epoch = 5 + 2 * int(count/500)
         avg_loss = 0
         for _ in range(epoch):
-            state,next_state,sin_task_len,state_value,expert_mark = self.__reply_buffer.random_sample(512,self.__device)
+            state,next_state,sin_task_len,state_value,task_num_list,expert_mark = self.__reply_buffer.random_sample(512,self.__device)
             with torch.no_grad():
-                task_num_indices = state_value < 0
-                task_num = - state_value[task_num_indices].astype(int)
+                task_num = task_num_list[task_num_list > 0]
                 state_value = torch.tensor(state_value, dtype=torch.float32).to(self.__device)
                 if len(next_state) != 0:
                     next_state_out = torch.zeros(len(next_state),dtype=torch.float32).to(self.__device)
@@ -281,9 +281,13 @@ class TrainBot():
                         if len(temp_state) > 0:
                             next_state_out[indices] = self.__trained_experts[i](temp_state).reshape(-1)
                     next_state_out = torch.tensor([torch.min(elem) for elem in torch.split(next_state_out, sin_task_len.tolist())])
-                    next_state_out = [torch.mean(elem) for elem in torch.split(next_state_out, task_num.tolist())]
+                    next_state_out = [torch.sum(elem) for elem in torch.split(next_state_out, task_num.tolist())]
                     next_state_out = torch.tensor(next_state_out, dtype=torch.float32).to(self.__device).reshape(-1)
-                    state_value[task_num_indices] = next_state_out
+                    state_value[task_num_list > 0] += next_state_out
+                    indices = task_num_list < 1
+                    task_num_list[task_num_list<self.__smooth_num] = self.__smooth_num
+                    task_num_list[indices] = 0
+                    state_value[task_num_list > 0] /= torch.tensor(task_num_list[task_num_list > 0]).to(self.__device)
             value = self.__target_net(state)
             state_value = state_value.reshape(-1, 1)
             loss = self.__criterion(value,state_value)
@@ -376,10 +380,11 @@ def run(filename):
 if __name__ == "__main__":
     from torch import multiprocessing as mp
     filename_list = ["node","openb_pod_list_gpushare100","openb_pod_list_multigpu50"]
+    run("openb_pod_list_multigpu50")
     ctx = mp.get_context("spawn")
     pool = ctx.Pool(len(filename_list))
     for filename in filename_list:
         pool.apply_async(run, args=(filename,))
     pool.close()
     pool.join()
-    #run("openb_pod_list_multigpu50")
+
