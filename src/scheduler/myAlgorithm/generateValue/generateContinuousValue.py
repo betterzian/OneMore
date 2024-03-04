@@ -184,11 +184,11 @@ class TrainBot():
         self.__filename = filename
         self.__epoch = epoch
         self.__device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        self.__now_expect = 3
+        self.__now_expect = 0
         self.__trained_experts =[]
         if not os.path.exists(path + f"/srcData/offline_task/model/{self.__filename}_model"):
             os.mkdir(path + f"/srcData/offline_task/model/{self.__filename}_model")
-        for i in range(12):
+        for i in range(10):
             self.__trained_experts.append(StateValueExpert(9).to(self.__device))
             if os.path.exists(path + f"/srcData/offline_task/model/{self.__filename}_model/model{i}.pth"):
                 self.__trained_experts[i].load_state_dict(torch.load(path + f"/srcData/offline_task/model/{self.__filename}_model/model{i}.pth"))
@@ -209,7 +209,7 @@ class TrainBot():
         self.__task_len = len(self.__task_list)
         self.__cpu_gpu_rate = self.__get_cgr(self.__filename)
         self.__tl_one_time = 100
-        self.__smooth_num = int(self.__tl_one_time * 0.05)
+        self.__smooth_num = int(self.__tl_one_time * 0.1)
         self.__reply_buffer = BufferArray(409600,task_num=self.__tl_one_time)
         self.__writer = SummaryWriter(path+f"/log/{self.__filename}_model")
         self.__loss = 100
@@ -236,9 +236,8 @@ class TrainBot():
                         state_len[j] = len(temp_next)
                         expert_mark[j, 0:state_len[j]] = self.__get_expert_num(temp_next)
                         next_state[j,0:state_len[j],:] = deal_state(temp_next,self.__cpu_gpu_rate)
-                loc = state_len > 0
-                state_len = state_len[loc]
-                if len(state_len) > 0:
+                state_len = state_len[state_len > 0]
+                if len(state_len) >  0:
                     task_num = len(state_len)
                     state_value = state_sum * max(0,self.__smooth_num - task_num)
                     temp_len[:len(state_len)] = state_len
@@ -306,14 +305,14 @@ class TrainBot():
             return data["cgr"]
 
     def __generate_state(self, i=0, cpu_max=129, gpu_max=11):
-        gpu_max = min(self.__now_expect,gpu_max)
         # gpu_max = int(gpu_max * min(1.0, math.tanh(2 * i / self.__epoch))) + 1
-        if gpu_max == 0:
-            gpu_max = 11
+        if self.__now_expect == 0:
             cpu_max = 0
-        state = np.random.randint(0, gpu_max, 9)
-        if cpu_max != 0:
-            state[1] = gpu_max - 1
+            num = 8
+        else:
+            num = self.__now_expect-1
+        state = np.zeros(9)
+        state[1:1+num] = np.random.randint(1, gpu_max, num)
         state = np.round(state / 10.0, 1)
         state[0] = 100
         state = abs(np.sort(-state))
@@ -326,7 +325,7 @@ class TrainBot():
         return self.__task_list[site]
 
     def __get_expert_num(self,temp_next):
-        expert = temp_next[:,1] + 1
+        expert = 9 - np.sum(temp_next[:,1:] == 0, axis=1).reshape(-1)
         expert[temp_next[:,0] == 0] = 0
         expert = expert.astype(int)
         return expert
