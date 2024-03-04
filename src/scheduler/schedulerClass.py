@@ -36,6 +36,8 @@ class Scheduler:
     def run(self,task:Task):
         pass
 
+
+
     def add_reschedule_num(self,num=1):
         self._reschedule_num += num
 
@@ -97,9 +99,11 @@ class Scheduler:
 
     def __return_task_mem(self,mem):
         cpu = mem[0][:self._task_len]
+        cpu = cpu - 0
         gpu = mem[1]
         if len(gpu) != 0:
             gpu = gpu[:,:self._task_len]
+            gpu = gpu - 0
         return cpu,gpu
 
     def get_task_info(self,task:Task):
@@ -128,7 +132,7 @@ class Scheduler:
             cpu = task.get_cpu_info(self.__can_predict)
             gpu = task.get_gpu_info(self.__can_predict)
         if task_mem is None:
-            return cpu,gpu
+            return np.array(cpu)-0,np.array(gpu)-0
         task_mem.mem = (cpu,gpu)
         self._task_no_cache_num += 1
         return self.__return_task_mem(task_mem.mem)

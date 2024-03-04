@@ -8,8 +8,7 @@ class ModelScheduler(Scheduler):
         super().__init__(cluster,can_predict,task_mem,node_mem)
         self.__device = torch.device("cpu")
         self.__state_value = StateValue(9).to(self.__device)
-        self.__state_value.load_state_dict(torch.load("../srcData/offline_task/"+ParamHolder().filename+"_model/model.pth"))
-        #self.__state_value.load_state_dict(torch.load('../srcData/offline_task/model/off_task_list_model.pth'))
+        self.__state_value.load_state_dict(torch.load("../srcData/offline_task/model/"+ParamHolder().filename+"_model/model.pth"))
         self.__state_value.eval()
         # self.__buffer = BufferArray(len(cluster))
 
@@ -33,8 +32,7 @@ class ModelScheduler(Scheduler):
                 old_state[0] = temp_node_cpu.min()
                 temp_new_state_0 = temp_node_cpu - task_cpu
                 temp_new_state_0 = temp_new_state_0.min()
-                temp_new_node_gpu = temp_node_gpu[:]
-                temp_new_node_gpu = abs(np.sort(-temp_new_node_gpu))
+                temp_new_node_gpu = abs(np.sort(-temp_node_gpu))
                 old_state[1:1+len(temp_new_node_gpu)] = temp_new_node_gpu
                 old_value = self.__state_value(torch.tensor(old_state,dtype=torch.float32).to(self.__device))
                 task_gpu = task_gpu.sum()
@@ -43,6 +41,7 @@ class ModelScheduler(Scheduler):
                     new_state[0] = temp_new_state_0
                     new_value = self.__state_value(torch.tensor(new_state,dtype=torch.float32).to(self.__device))
                     if now_priority < old_value - new_value:
+                        now_priority = old_value - new_value
                         gpu_select = {}
                         now_select = node
                 elif task_gpu < 1:
@@ -65,11 +64,13 @@ class ModelScheduler(Scheduler):
                             new_state = torch.cat((new_state, gpu_list[i].reshape(-1,9)), dim=0)
                         new_value = self.__state_value(new_state)
                         if now_priority < old_value - new_value.min():
+                            now_priority = old_value - new_value.min()
                             gpu_select = {gpu_num[torch.argmin(new_value)]:0}
                             now_select = node
                 else:
                     j = 0
                     new_state = np.zeros(9)
+                    new_state[0] = temp_new_state_0
                     temp_task_gpu = task_gpu
                     for i in range(len(temp_node_gpu)):
                         if temp_task_gpu > 0 and temp_node_gpu[i] == 1:
@@ -82,6 +83,7 @@ class ModelScheduler(Scheduler):
                         new_state[1:1+len(temp_node_gpu)] = temp_node_gpu
                         new_value = self.__state_value(torch.tensor(new_state, dtype=torch.float32).to(self.__device))
                         if now_priority < old_value - new_value:
+                            now_priority = old_value - new_value
                             gpu_select = temp_select
                             now_select = node
         if now_select != -1:

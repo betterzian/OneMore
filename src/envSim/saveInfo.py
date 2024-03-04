@@ -11,6 +11,8 @@ def save_info(scheduler: Scheduler):
     max_gpu = 0
     rest_cpu = 0
     rest_gpu = 0
+    offline_task_cpu = 0
+    offline_task_gpu = 0
     success_num = 0
     node_dict = {}
     length = TimeHolder().get_time_end_flag() - TimeHolder().get_time_init_flag()
@@ -19,10 +21,15 @@ def save_info(scheduler: Scheduler):
         max_gpu += node.get_max_gpu()[:length].sum()
         rest_cpu += node.get_cpu_info()[:length].sum()
         rest_gpu += node.get_gpu_info()[:,:length].sum()
-        success_num += node.get_success_num()
+        temp_success_num,temp_offline_task_cpu,temp_offline_task_gpu = node.get_success_num()
+        success_num += temp_success_num
+        offline_task_cpu += temp_offline_task_cpu
+        offline_task_gpu += temp_offline_task_gpu
         node_dict[node.get_id()] = [len(node.get_online_task()),node.get_cpu_info().max(),node.get_cpu_info().min(),node.get_max_gpu().max(),node.get_cpu_info(),node.get_max_gpu()]
     args_dict["cpu_rate"] = (max_cpu - rest_cpu) * 1.0 / max_cpu
     args_dict["gpu_rate"] = (max_gpu - rest_gpu) * 1.0 / max_gpu
+    args_dict["off_cpu_rate"] = (offline_task_cpu) *1.0 / max_cpu
+    args_dict["off_gpu_rate"] = (offline_task_gpu) *1.0 / max_gpu
     args_dict["reschedule_num"] = scheduler.get_reschedule_num()
     args_dict["fail_num"] = scheduler.get_fail_num()
     args_dict["success_num"] = success_num
@@ -46,6 +53,7 @@ def save_info(scheduler: Scheduler):
     args_dict["node_type"] = [ParamHolder().node_type]
     args_dict["node_num"] = [ParamHolder().node_num]
     args_dict["cpu_gpu_rate"] = [ParamHolder().cpu_gpu_rate]
+    args_dict["filename"] = ParamHolder().filename
 
     str_list = pd.DataFrame.from_dict(args_dict)
     str_list.to_csv('../output/scheduler_result_'+str(ParamHolder().csv_name)+'.txt', index=False, header=True, sep='\t', mode='a', encoding="utf-8",quoting=csv.QUOTE_NONE, escapechar=',')

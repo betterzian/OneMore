@@ -38,9 +38,10 @@ def run(scheduler, online_task_list, offline_task_list):
             now_task = online_task_list.pop()
             isOk = scheduler.run(now_task)
             if force_schedule and not isOk:
-                fail_task.extend(scheduler.force_set_online_task(now_task))
-        while fail_task:
-            task = fail_task.pop()
+                reschedule_task.extend(scheduler.force_set_online_task(now_task))
+        scheduler.add_reschedule_num(len(reschedule_task))
+        while reschedule_task:
+            task = reschedule_task.pop()
             if task.get_arrive_time() < 0:
                 return
             else:
@@ -51,9 +52,9 @@ def run(scheduler, online_task_list, offline_task_list):
             else:
                 break
             isOk = scheduler.run(now_task)
-            if not isOk:
-                fail_task.append(now_task)
-        scheduler.add_fail_num(len(fail_task))
+        #     if not isOk:
+        #         fail_task.append(now_task)
+        # scheduler.add_fail_num(len(fail_task))
         TimeHolder().add_time()
         pbar.update(1)
     scheduler.set_time()
@@ -66,7 +67,6 @@ def run(scheduler, online_task_list, offline_task_list):
     pbar.close()
     with open('../tmp/'+ParamHolder().csv_name+'.txt', 'a') as file:
         file.write('ok\n')
-
 
 def sim_run(args_dict):
     from src.envSim.simParam import ParamHolder

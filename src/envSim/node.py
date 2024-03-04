@@ -17,9 +17,19 @@ class Node:
         self.__offline_task_list = []
         for _ in range(self.__gpu_num):
             self.__gpu.append(CpuGpu(1))
-        self.__success_num = 0
+        self.__success_offline_task_list = []
 
+    def __add_success_offline_task_list(self, task: Task):
+        self.__success_offline_task_list.append(task)
 
+    def __get_success_offline_task_info(self):
+        cpu = 0
+        gpu = 0
+        length = len(self.__success_offline_task_list)
+        for task in self.__success_offline_task_list:
+            cpu += task.get_cpu_info().sum()
+            gpu += np.array(task.get_gpu_info()).sum()
+        return length, cpu, gpu
 
     def get_id(self):
         return self.__id
@@ -99,7 +109,7 @@ class Node:
         while self.__offline_task_list:
             task = self.__offline_task_list.pop()
             if task.get_task_len() <= (TimeHolder().get_time() - task.get_start_time()):
-                self.__success_num += 1
+                self.__add_success_offline_task_list(task)
                 continue
             self.pop_task(task)
             pop_list.append(task)
@@ -114,6 +124,9 @@ class Node:
         return pop_list
 
     def get_success_num(self):
-        return self.__success_num + len(self.__offline_task_list)
+        while self.__offline_task_list:
+            task = self.__offline_task_list.pop()
+            self.__add_success_offline_task_list(task)
+        return self.__get_success_offline_task_info()
 
 
