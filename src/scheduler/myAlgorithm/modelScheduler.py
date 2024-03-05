@@ -1,15 +1,22 @@
 from src.scheduler.schedulerClass import Scheduler
 import numpy as np
-from src.scheduler.myAlgorithm.generateValue.generateContinuousValue import StateValue,get_next_state
+from src.scheduler.myAlgorithm.generateValue.generateContinuousValue import StateValueExpert, deal_state, \
+    get_expert_num
+import os
 from src.envSim.simParam import ParamHolder
 import torch
+
+
 class ModelScheduler(Scheduler):
-    def __init__(self,cluster,can_predict = True,task_mem = {},node_mem = {}):
-        super().__init__(cluster,can_predict,task_mem,node_mem)
+    def __init__(self, cluster, can_predict=True, task_mem={}, node_mem={}):
+        super().__init__(cluster, can_predict, task_mem, node_mem)
         self.__device = torch.device("cpu")
-        self.__state_value = StateValue(9).to(self.__device)
-        self.__state_value.load_state_dict(torch.load("../srcData/offline_task/model/"+ParamHolder().filename+"_model/model.pth"))
-        self.__state_value.eval()
+        self.__trained_experts = []
+        for i in range(6):
+            self.__trained_experts.append(StateValueExpert(9).to(self.__device))
+            self.__trained_experts[i].load_state_dict(
+                torch.load(f"../srcData/offline_task/model/{ParamHolder().filename}_model/model{i}.pth"))
+            self.__trained_experts[i].eval()
         # self.__buffer = BufferArray(len(cluster))
 
     def run(self, task):
@@ -19,6 +26,7 @@ class ModelScheduler(Scheduler):
         else:
             task_gpu = task_gpu[:, 0]
         now_priority = -1e8
+        self_priority = 1e8
         now_select = -1
         gpu_select = {}
         for node in self.cluster:
@@ -33,17 +41,29 @@ class ModelScheduler(Scheduler):
                 temp_new_state_0 = temp_node_cpu - task_cpu
                 temp_new_state_0 = temp_new_state_0.min()
                 temp_new_node_gpu = abs(np.sort(-temp_node_gpu))
-                old_state[1:1+len(temp_new_node_gpu)] = temp_new_node_gpu
-                old_value = self.__state_value(torch.tensor(old_state,dtype=torch.float32).to(self.__device))
+                old_state[1:1 + len(temp_new_node_gpu)] = temp_new_node_gpu - 0
+                expert = get_expert_num(np.array([old_state]))
+                if expert[0] > 5:
+                    print(expert[0], [old_state])
+                temp_old_state = deal_state(np.array([old_state]),self._rate).reshape(-1)
+                old_value = self.__trained_experts[expert[0]](torch.tensor(temp_old_state, dtype=torch.float32).to(self.__device))
                 task_gpu = task_gpu.sum()
                 if task_gpu == 0:
                     new_state = old_state - 0
                     new_state[0] = temp_new_state_0
-                    new_value = self.__state_value(torch.tensor(new_state,dtype=torch.float32).to(self.__device))
-                    if now_priority < old_value - new_value:
+                    expert = get_expert_num(np.array([new_state]))
+                    new_state = deal_state(np.array([new_state]), self._rate).reshape(-1)
+                    new_value = self.__trained_experts[expert[0]](torch.tensor(new_state, dtype=torch.float32).to(self.__device))
+                    if now_priority + 1 < old_value - new_value :
                         now_priority = old_value - new_value
+                        self_priority = new_value
                         gpu_select = {}
                         now_select = node
+                    elif now_priority + 1 > old_value - new_value > now_priority -1:
+                        if self_priority > new_value:
+                            self_priority = new_value
+                            gpu_select = {}
+                            now_select = node
                 elif task_gpu < 1:
                     gpu_list = []
                     gpu_num = []
@@ -54,19 +74,30 @@ class ModelScheduler(Scheduler):
                             temp_new_node_gpu[i] -= task_gpu
                             temp_new_node_gpu = abs(np.sort(-temp_new_node_gpu))
                             new_state[0] = temp_new_state_0
-                            new_state[1:1+len(temp_new_node_gpu)] = temp_new_node_gpu
-                            new_state = torch.tensor(new_state,dtype=torch.float32).to(self.__device)
+                            new_state[1:1 + len(temp_new_node_gpu)] = temp_new_node_gpu
                             gpu_list.append(new_state)
                             gpu_num.append(i)
                     if len(gpu_list) > 0:
-                        new_state = gpu_list[0].reshape(-1,9)
-                        for i in range(1,len(gpu_list)):
-                            new_state = torch.cat((new_state, gpu_list[i].reshape(-1,9)), dim=0)
-                        new_value = self.__state_value(new_state)
-                        if now_priority < old_value - new_value.min():
+                        new_state = np.array(gpu_list)
+                        expert = get_expert_num(new_state)
+                        new_state = deal_state(new_state, self._rate)
+                        new_state = torch.tensor(new_state, dtype=torch.float32).to(self.__device)
+                        new_value = torch.zeros(len(new_state),dtype=torch.float32).to(self.__device)
+                        for i in range(len(self.__trained_experts)):
+                            indices = expert == i
+                            temp_state = new_state[indices]
+                            if len(temp_state) > 0:
+                                new_value[indices] = self.__trained_experts[i](temp_state).reshape(-1)
+                        if now_priority + 1 < old_value - new_value.min():
                             now_priority = old_value - new_value.min()
-                            gpu_select = {gpu_num[torch.argmin(new_value)]:0}
+                            self_priority = new_value.min()
+                            gpu_select ={gpu_num[torch.argmin(new_value)]: 0}
                             now_select = node
+                        elif now_priority + 1 > old_value - new_value.min() > now_priority - 1:
+                            if self_priority > new_value.min():
+                                self_priority = new_value.min()
+                                gpu_select = {gpu_num[torch.argmin(new_value)]: 0}
+                                now_select = node
                 else:
                     j = 0
                     new_state = np.zeros(9)
@@ -80,18 +111,25 @@ class ModelScheduler(Scheduler):
                             j += 1
                     if len(temp_select) == int(task_gpu):
                         temp_node_gpu = abs(np.sort(-temp_node_gpu))
-                        new_state[1:1+len(temp_node_gpu)] = temp_node_gpu
-                        new_value = self.__state_value(torch.tensor(new_state, dtype=torch.float32).to(self.__device))
-                        if now_priority < old_value - new_value:
+                        new_state[1:1 + len(temp_node_gpu)] = temp_node_gpu
+                        expert = get_expert_num(np.array([new_state]))
+                        new_state = deal_state(np.array([new_state]), self._rate).reshape(-1)
+                        new_value = self.__trained_experts[expert[0]](torch.tensor(new_state, dtype=torch.float32).to(self.__device))
+                        if now_priority + 1 < old_value - new_value:
                             now_priority = old_value - new_value
+                            self_priority = new_value
                             gpu_select = temp_select
                             now_select = node
+                        elif now_priority + 1 > old_value - new_value > now_priority - 1:
+                            if self_priority > new_value:
+                                self_priority = new_value
+                                gpu_select = temp_select
+                                now_select = node
         if now_select != -1:
             self.set_task(now_select, task, gpu_select)
             return True
         else:
             return False
-
 
 #     def run(self, task):
 #         self.__buffer.init_again()

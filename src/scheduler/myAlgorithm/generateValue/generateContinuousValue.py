@@ -164,11 +164,15 @@ class BufferArray:
             batch_size = self.__now_len
         indices = np.random.randint(self.__now_len, size=batch_size)
         state = self.__state[indices]
-        sin_task_len = self.__sin_task_len[indices].reshape(-1)
-        next_state = self.__next_state[indices].reshape(-1,self.__state_dim)
+        sin_task_len = self.__sin_task_len[indices]
+        next_state = self.__next_state[indices]
         state_value = self.__state_value[indices].reshape(-1)
         task_num = self.__task_num_list[indices].reshape(-1)
-        expert_mark = self.__expert_mark[indices].reshape(-1)
+        expert_mark = self.__expert_mark[indices]
+        indices = task_num > 0
+        sin_task_len = sin_task_len[indices].reshape(-1)
+        next_state = next_state[indices].reshape(-1,self.__state_dim)
+        expert_mark = expert_mark[indices].reshape(-1)
         sin_task_len = sin_task_len[sin_task_len > 0]
         indices = next_state[:,0] != -1
         next_state = next_state[indices]
@@ -184,7 +188,7 @@ class TrainBot():
         self.__filename = filename
         self.__epoch = epoch
         self.__device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        self.__now_expect = 0
+        self.__now_expect = 5
         self.__trained_experts =[]
         if not os.path.exists(path + f"/srcData/offline_task/model/{self.__filename}_model"):
             os.mkdir(path + f"/srcData/offline_task/model/{self.__filename}_model")
@@ -223,8 +227,8 @@ class TrainBot():
             for count in range(1,2001):
                 state, state_sum = self.__generate_state()
                 task_list = self.__generate_task()
-                state_len = np.ones(self.__tl_one_time).astype(int) * -1
-                temp_len = np.ones(self.__tl_one_time).astype(int) * -1
+                sin_task_len = np.zeros(self.__tl_one_time).astype(int)
+                temp_len = np.zeros(self.__tl_one_time).astype(int)
                 next_state = np.ones((self.__tl_one_time,8,9), dtype=np.float32) * -1
                 expert_mark = np.zeros((self.__tl_one_time,8)).astype(int)
                 state_value = 0
@@ -233,14 +237,14 @@ class TrainBot():
                     temp_next = self.__get_next_state(state, task_list[j])
                     state_value = state_sum
                     if temp_next is not None:
-                        state_len[j] = len(temp_next)
-                        expert_mark[j, 0:state_len[j]] = self.__get_expert_num(temp_next)
-                        next_state[j,0:state_len[j],:] = deal_state(temp_next,self.__cpu_gpu_rate)
-                state_len = state_len[state_len > 0]
-                if len(state_len) >  0:
-                    task_num = len(state_len)
+                        sin_task_len[j] = len(temp_next)
+                        expert_mark[j, 0:sin_task_len[j]] = get_expert_num(temp_next)
+                        next_state[j,0:sin_task_len[j],:] = deal_state(temp_next,self.__cpu_gpu_rate)
+                sin_task_len = sin_task_len[sin_task_len > 0]
+                if len(sin_task_len) > 0:
+                    task_num = len(sin_task_len)
                     state_value = state_sum * max(0,self.__smooth_num - task_num)
-                    temp_len[:len(state_len)] = state_len
+                    temp_len[:len(sin_task_len)] = sin_task_len
                 self.__reply_buffer.add_memo(deal_state(np.expand_dims(state,axis=0),self.__cpu_gpu_rate), next_state, temp_len, state_value,task_num, expert_mark)
                 if count % 500 == 0:
                     loss += self.update_expert(count)
@@ -251,9 +255,9 @@ class TrainBot():
                     turn += 1
                     if turn % 5 == 0:
                         self.__trained_experts[self.__now_expect].load_state_dict(self.__target_net.state_dict())
-            if self.__loss < 0.1:
+            if self.__loss < 1:
                 self.__count += 1
-            if self.__count % 21 == 0:
+            if self.__count % 200 == 0:
                 self.__count = 1
                 self.__loss = 100
                 self.__trained_experts[self.__now_expect].load_state_dict(self.__target_net.state_dict())
@@ -324,11 +328,11 @@ class TrainBot():
         site = np.random.randint(0, self.__task_len, self.__tl_one_time)
         return self.__task_list[site]
 
-    def __get_expert_num(self,temp_next):
-        expert = 9 - np.sum(temp_next[:,1:] == 0, axis=1).reshape(-1)
-        expert[temp_next[:,0] == 0] = 0
-        expert = expert.astype(int)
-        return expert
+def get_expert_num(temp_next):
+    expert = 9 - np.sum(temp_next[:,1:] == 0, axis=1).reshape(-1)
+    expert[temp_next[:,0] == 0] = 0
+    expert = expert.astype(int)
+    return expert
 
 def get_next_state(state, task):
     if state[0] < task[0]:
@@ -380,10 +384,10 @@ if __name__ == "__main__":
     from torch import multiprocessing as mp
     filename_list = ["node","openb_pod_list_gpushare100","openb_pod_list_multigpu50"]
     run("openb_pod_list_multigpu50")
-    ctx = mp.get_context("spawn")
-    pool = ctx.Pool(len(filename_list))
-    for filename in filename_list:
-        pool.apply_async(run, args=(filename,))
-    pool.close()
-    pool.join()
+    # ctx = mp.get_context("spawn")
+    # pool = ctx.Pool(len(filename_list))
+    # for filename in filename_list:
+    #     pool.apply_async(run, args=(filename,))
+    # pool.close()
+    # pool.join()
 

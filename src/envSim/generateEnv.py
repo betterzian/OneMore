@@ -18,9 +18,11 @@ def generate_offline_task_list(src_task=[], task_num=ParamHolder().offline_task_
         return src_task
     np.random.shuffle(src_task)
     task_list = []
+    site = np.random.randint(0, len(src_task), task_num)
+    temp_list = src_task[site]
     time_len = TimeHolder().get_fake_time_left()
-    for i in range(task_num):
-        temp = src_task[random.randint(0, len(src_task) - 1)]
+    for i in range(len(temp_list)):
+        temp = temp_list[i]
         task_list.append(
             Task(id=i, cpu=temp[0], gpu=temp[1],
                  time_len=random.randint(90, time_len - 1),
