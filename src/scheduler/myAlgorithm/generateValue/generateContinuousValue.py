@@ -325,8 +325,8 @@ class TrainBot():
         return state,state_sum+8
 
     def __generate_task(self):
-        site = np.random.randint(0, self.__task_len, self.__tl_one_time)
-        return self.__task_list[site]
+        temp_list = np.random.choice(range(len(self.__task_list)), size=self.__tl_one_time, replace=True)
+        return temp_list
 
 def get_expert_num(temp_next):
     expert = 9 - np.sum(temp_next[:,1:] == 0, axis=1).reshape(-1)

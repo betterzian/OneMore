@@ -16,15 +16,15 @@ def generate_offline_task_list(src_task=[], task_num=ParamHolder().offline_task_
         src_task = np.loadtxt(src_task_file, delimiter=',', dtype=float)
     if all:
         return src_task
-    np.random.shuffle(src_task)
     task_list = []
-    site = np.random.randint(0, len(src_task), task_num)
-    temp_list = src_task[site]
+    temp_list = np.random.choice(range(len(src_task)), size=task_num, replace=True)
+    temp_list = src_task[temp_list]
     time_len = TimeHolder().get_fake_time_left()
     for i in range(len(temp_list)):
         temp = temp_list[i]
         task_list.append(
             Task(id=i, cpu=temp[0], gpu=temp[1],
+                 # time_len=1,
                  time_len=random.randint(90, time_len - 1),
                  #arrive_time=random.randint(0, time_len - 1))
                  arrive_time=0)

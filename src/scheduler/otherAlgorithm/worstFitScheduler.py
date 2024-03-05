@@ -16,7 +16,11 @@ class WorstFitScheduler(Scheduler):
             if np.any(task_cpu > temp_node_cpu):
                 continue
             else:
-                temp_priority = temp_node_cpu.sum() - task_cpu.sum() + self._rate * (temp_node_gpu.sum() - task_gpu.sum())
+                if len(task_gpu) == 0:
+                    task_gpu_sum = 0
+                else:
+                    task_gpu_sum = task_gpu.sum()
+                temp_priority = temp_node_cpu.sum() - task_cpu.sum() + self._rate * (temp_node_gpu.sum() - task_gpu_sum)
                 for i in range(len(task_gpu)):
                     gpu_priority = -1
                     temp_gpu_select = -1
