@@ -21,13 +21,15 @@ def generate_offline_task_list(src_task=[], task_num=ParamHolder().offline_task_
     temp_list = src_task[temp_list]
     time_len = TimeHolder().get_fake_time_left()
     for i in range(len(temp_list)):
+        arrive_time = 0
+        if random.random() < 0.5:
+            arrive_time = random.randint(0, time_len - 1)
         temp = temp_list[i]
         task_list.append(
             Task(id=i, cpu=temp[0], gpu=temp[1],
                  # time_len=1,
                  time_len=random.randint(90, time_len - 1),
-                 #arrive_time=random.randint(0, time_len - 1))
-                 arrive_time=0)
+                 arrive_time=arrive_time)
         )
     task_list = sorted(task_list, key=lambda task: -task.get_arrive_time())
     return task_list

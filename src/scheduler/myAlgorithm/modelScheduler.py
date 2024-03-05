@@ -12,7 +12,7 @@ class ModelScheduler(Scheduler):
         super().__init__(cluster, can_predict, task_mem, node_mem)
         self.__device = torch.device("cpu")
         self.__trained_experts = []
-        self.__gpu_gate = 0
+        self.__gpu_gate = 0.3
         for i in range(8):
             self.__trained_experts.append(StateValueExpert(9).to(self.__device))
             self.__trained_experts[i].load_state_dict(
@@ -134,7 +134,8 @@ class ModelScheduler(Scheduler):
             return True
         else:
             if task_gpu.sum() < 7:
-                print(1)
+                #print(1)
+                pass
             return False
 
 #     def run(self, task):
