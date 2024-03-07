@@ -13,7 +13,13 @@ class ModelScheduler(Scheduler):
         self.__device = torch.device("cpu")
         self.__trained_experts = []
         self.__gpu_gate = 0.3
-        for i in range(8):
+        self.__task_prob_int = np.loadtxt(f"../srcData/state_value/{ParamHolder().filename}/smaller_task_count_int.csv", delimiter=",")
+        self.__task_prob_float = np.loadtxt(f"../srcData/state_value/{ParamHolder().filename}/smaller_task_count_float.csv", delimiter=",")
+        self.__task_max_num = self.__task_prob_int.max()
+        self.__cpu_max_num = len(self.__task_prob_int) - 1
+        self.__gpu_max_num = len(self.__task_prob_int[0]) - 1
+
+        for i in range(10):
             self.__trained_experts.append(StateValueExpert(9).to(self.__device))
             self.__trained_experts[i].load_state_dict(
                 torch.load(f"../srcData/offline_task/model/{ParamHolder().filename}_model/model{i}.pth"))
@@ -22,6 +28,9 @@ class ModelScheduler(Scheduler):
 
     def run(self, task):
         task_cpu, task_gpu = self.get_task_info(task)
+        # if not self.get_can_predict():
+        #     task_cpu -= 1
+        #     self.__gpu_gate = 0
         if len(task_gpu) == 0:
             task_gpu = np.array([0])
         else:
@@ -43,19 +52,15 @@ class ModelScheduler(Scheduler):
                 temp_new_state_0 = temp_new_state_0.min()
                 temp_new_node_gpu = abs(np.sort(-temp_node_gpu))
                 old_state[1:1 + len(temp_new_node_gpu)] = temp_new_node_gpu - 0
-                expert = get_expert_num(np.array([old_state]))
-                temp_old_state = deal_state(np.array([old_state]),self._rate).reshape(-1)
-                old_value = self.__trained_experts[expert[0]](torch.tensor(temp_old_state, dtype=torch.float32).to(self.__device))
+                old_value = self.__get_value(old_state).min()
                 task_gpu = task_gpu.sum()
                 if task_gpu == 0:
                     new_state = old_state - 0
                     new_state[0] = temp_new_state_0
-                    expert = get_expert_num(np.array([new_state]))
-                    new_state = deal_state(np.array([new_state]), self._rate).reshape(-1)
-                    new_value = self.__trained_experts[expert[0]](torch.tensor(new_state, dtype=torch.float32).to(self.__device))
-                    if now_priority  < old_value - new_value:
-                        now_priority = old_value - new_value
-                        self_priority = new_value
+                    new_value = self.__get_value(new_state)
+                    if now_priority  < old_value - new_value.min():
+                        now_priority = old_value - new_value.min()
+                        self_priority = new_value.min()
                         gpu_select = {}
                         now_select = node
                     # elif now_priority + 1 > old_value - new_value > now_priority -1:
@@ -83,16 +88,8 @@ class ModelScheduler(Scheduler):
                             gpu_num.append(i)
                     if len(gpu_list) > 0:
                         new_state = np.array(gpu_list)
-                        expert = get_expert_num(new_state)
-                        new_state = deal_state(new_state, self._rate)
-                        new_state = torch.tensor(new_state, dtype=torch.float32).to(self.__device)
-                        new_value = torch.zeros(len(new_state),dtype=torch.float32).to(self.__device)
-                        for i in range(len(self.__trained_experts)):
-                            indices = expert == i
-                            temp_state = new_state[indices]
-                            if len(temp_state) > 0:
-                                new_value[indices] = self.__trained_experts[i](temp_state).reshape(-1)
-                        if now_priority  < old_value - new_value.min():
+                        new_value = self.__get_value(new_state)
+                        if now_priority < old_value - new_value.min():
                             now_priority = old_value - new_value.min()
                             self_priority = new_value.min()
                             gpu_select ={gpu_num[torch.argmin(new_value)]: 0}
@@ -116,12 +113,10 @@ class ModelScheduler(Scheduler):
                     if len(temp_select) == int(task_gpu):
                         temp_node_gpu = abs(np.sort(-temp_node_gpu))
                         new_state[1:1 + len(temp_node_gpu)] = temp_node_gpu
-                        expert = get_expert_num(np.array([new_state]))
-                        new_state = deal_state(np.array([new_state]), self._rate).reshape(-1)
-                        new_value = self.__trained_experts[expert[0]](torch.tensor(new_state, dtype=torch.float32).to(self.__device))
-                        if now_priority  < old_value - new_value:
-                            now_priority = old_value - new_value
-                            self_priority = new_value
+                        new_value = self.__get_value(new_state)
+                        if now_priority  < old_value - new_value.min():
+                            now_priority = old_value - new_value.min()
+                            self_priority = new_value.min()
                             gpu_select = temp_select
                             now_select = node
                         # elif now_priority + 1 > old_value - new_value > now_priority - 1:
@@ -133,10 +128,38 @@ class ModelScheduler(Scheduler):
             self.set_task(now_select, task, gpu_select)
             return True
         else:
-            if task_gpu.sum() < 7:
-                #print(1)
-                pass
             return False
+
+    def __get_prob(self,state):
+        return 1
+        prob = []
+        for i in range(len(state)):
+            int_num = np.count_nonzero(state[i] == 1)
+            if int_num > 0:
+                prob.append(self.__task_prob_int[min(int(state[i][0]),self.__cpu_max_num)][min(int_num,self.__gpu_max_num)] * 1.0 / self.__task_max_num)
+            else:
+                prob.append(self.__task_prob_float[min(int(state[i][0]),self.__cpu_max_num)][int(state[i][1] * 10) % 10] * 1.0 / self.__task_max_num)
+        prob = np.array(prob)
+        prob[prob < 0.05] = 0.05
+        return prob * 20
+
+    def __get_value(self,state):
+        state = state.reshape(-1,9)
+        expert = get_expert_num(state)
+        if self.get_can_predict():
+            prob = torch.tensor(self.__get_prob(state)).to(self.__device)
+        else:
+            prob = torch.tensor(self.__get_prob(state)).to(self.__device)
+        state = deal_state(state, self._rate)
+        value = torch.zeros(len(state), dtype=torch.float32).to(self.__device)
+        state = torch.tensor(state,dtype=torch.float32).to(self.__device)
+        for i in range(len(self.__trained_experts)):
+            indices = expert == i
+            temp_state = state[indices]
+            if len(temp_state) > 0:
+                value[indices] = self.__trained_experts[i](temp_state).reshape(-1)
+        value /= prob
+        return value
 
 #     def run(self, task):
 #         self.__buffer.init_again()
@@ -272,3 +295,5 @@ class ModelScheduler(Scheduler):
 #         next_state = torch.tensor(next_state, device=device)
 #         gpu_select = torch.tensor(gpu_select, device=device)
 #         return state, next_state, state_len, node_select, gpu_select
+
+

@@ -104,7 +104,7 @@ class Scheduler:
         if len(gpu) != 0:
             gpu = gpu[:,:self._task_len]
             gpu = gpu - 0
-        return cpu,gpu
+        return cpu,np.array(gpu)
 
     def get_task_info(self,task:Task):
         task_mem = None

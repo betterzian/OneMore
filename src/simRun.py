@@ -13,7 +13,7 @@ def run(scheduler, online_task_list, offline_task_list):
         isOk = scheduler.run(now_task)
         if not isOk:
             fail_task.append(now_task)
-    save_info(scheduler)
+    #save_info(scheduler)
     pbar = tqdm(total=TimeHolder().get_time_left(),
                 desc=type(scheduler).__name__ + "," + str(scheduler.get_can_predict()))
     reschedule_task = []

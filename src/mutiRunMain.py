@@ -6,7 +6,6 @@ import argparse
 from datetime import datetime
 from src.envSim.TXTtoCSV import txt_to_csv
 
-
 if __name__ == "__main__":
     current_time = datetime.now()
     parser = argparse.ArgumentParser(description='param')
