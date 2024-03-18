@@ -106,6 +106,10 @@ class BufferArray:
         self.__max_len = memo_max_len
         self.__now_len = self.__max_len if self.__is_full else self.__next_idx
 
+
+    def get_len(self):
+        return self.__now_len
+
     def init_again(self):
         self.__next_idx = 0
         self.__is_full = False
@@ -159,7 +163,12 @@ class TrainBot():
         self.__filename = filename
         self.__epoch = epoch
         self.__device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        self.__now_expect = 1
+        self.__now_expect = 0
+        self.__task_prob_int = np.loadtxt(path + f"/srcData/state_value/{self.__filename}/smaller_task_count_int.csv", delimiter=",")
+        self.__task_prob_float = np.loadtxt(path + f"/srcData/state_value/{self.__filename}/smaller_task_count_float.csv", delimiter=",")
+        self.__task_max_num = self.__task_prob_int.max()
+        self.__cpu_max_num = len(self.__task_prob_int) - 1
+        self.__gpu_max_num = len(self.__task_prob_int[0]) - 1
         self.__trained_experts =[]
         if not os.path.exists(path + f"/srcData/offline_task/model/{self.__filename}_model"):
             os.mkdir(path + f"/srcData/offline_task/model/{self.__filename}_model")
@@ -184,8 +193,7 @@ class TrainBot():
         self.__task_len = len(self.__task_list)
         self.__cpu_gpu_rate = self.__get_cgr(self.__filename)
         self.__tl_one_time = 100
-        self.__smooth_num = int(self.__tl_one_time * 0.05)
-        self.__reply_buffer = BufferArray(409600,task_num=self.__tl_one_time)
+        self.__reply_buffer = BufferArray(40960,task_num=self.__tl_one_time)
         self.__writer = SummaryWriter(path+f"/log/{self.__filename}_model")
         self.__loss = 100
         self.__count = 1
@@ -195,38 +203,45 @@ class TrainBot():
         turn = 0
         while self.__now_expect < 10:
             loss = 0
-            for count in range(1,2001):
+            for count in range(1,2049):
                 state, state_sum = self.__generate_state()
-                task_list = self.__generate_task()
                 sin_task_len = np.zeros(self.__tl_one_time).astype(int)
                 temp_len = np.zeros(self.__tl_one_time).astype(int)
                 next_state = np.ones((self.__tl_one_time,8,9), dtype=np.float32) * -1
                 expert_mark = np.zeros((self.__tl_one_time,8)).astype(int)
                 state_value = 0
                 task_num = 0
-                for j in range(len(task_list)):
-                    temp_next = self.__get_next_state(state, task_list[j])
+                prob = self.__get_prob(state)
+                if prob < 0.05:
                     state_value = state_sum
-                    if temp_next is not None:
-                        sin_task_len[j] = len(temp_next)
-                        expert_mark[j, 0:sin_task_len[j]] = get_expert_num(temp_next)
-                        next_state[j,0:sin_task_len[j],:] = deal_state(temp_next,self.__cpu_gpu_rate)
-                sin_task_len = sin_task_len[sin_task_len > 0]
-                if len(sin_task_len) > 0:
-                    task_num = len(sin_task_len)
-                    state_value = state_sum * max(0,self.__smooth_num - task_num)
+                    self.__reply_buffer.add_memo(deal_state(np.expand_dims(state,axis=0),self.__cpu_gpu_rate), next_state, temp_len, state_value,task_num, expert_mark)
+                else:
+                    j = 0
+                    while j < 50:
+                        task_list = self.__generate_task()
+                        for task in task_list:
+                            temp_next = self.__get_next_state(state, task)
+                            if temp_next is not None:
+                                sin_task_len[j] = len(temp_next)
+                                expert_mark[j, 0:sin_task_len[j]] = get_expert_num(temp_next)
+                                next_state[j,0:sin_task_len[j],:] = deal_state(temp_next,self.__cpu_gpu_rate)
+                                j += 1
+                                if j == 99:
+                                    break
+                    sin_task_len = sin_task_len[sin_task_len>0]
                     temp_len[:len(sin_task_len)] = sin_task_len
-                self.__reply_buffer.add_memo(deal_state(np.expand_dims(state,axis=0),self.__cpu_gpu_rate), next_state, temp_len, state_value,task_num, expert_mark)
-                if count % 500 == 0:
-                    loss += self.__update_expert(count)
+                    task_num = len(sin_task_len)
+                    self.__reply_buffer.add_memo(deal_state(np.expand_dims(state,axis=0),self.__cpu_gpu_rate), next_state, temp_len, state_value,task_num, expert_mark)
+                if count % 512 == 0:
+                    loss += self.__update_expert()
                     pbar.set_description(f"gpu_max: {self.__now_expect} and Loss: {loss/(int(count/500) + 1)}")
-                if count % 2000 == 0:
+                if count % 2048 == 0:
                     self.__loss = loss / (int(count / 500) + 1)
                     self.__writer.add_scalar("avg_loss", loss / (int(count / 500) + 1), turn)
                     turn += 1
                     if turn % 5 == 0:
                         self.__trained_experts[self.__now_expect].load_state_dict(self.__target_net.state_dict())
-            if self.__loss < 0.5:
+            if self.__loss < 1:
                 self.__count += 1
             if self.__count % 200 == 0:
                 self.__count = 1
@@ -236,13 +251,75 @@ class TrainBot():
                 self.__reply_buffer.init_again()
                 torch.save(self.__trained_experts[self.__now_expect].state_dict(), path+f"/srcData/offline_task/model/{self.__filename}_model/model{self.__now_expect}.pth")
                 self.__now_expect += 1
-                if self.__now_expect > 2:
-                    self.__smooth_num = self.__tl_one_time
+                # if self.__now_expect == 3:
+                #     self.__smooth_num = self.__tl_one_time
             pbar.update(1)
         pbar.close()
 
-    def __update_expert(self, count):
-        epoch = 5 + 2 * int(count/500)
+    def train(self):
+        pbar = tqdm(total=self.__epoch, desc=f"{self.__filename} epoch")
+        turn = 0
+        while self.__now_expect < 10:
+            loss = 0
+            for count in range(1, 2049):
+                state, state_sum = self.__generate_state()
+                sin_task_len = np.zeros(self.__tl_one_time).astype(int)
+                temp_len = np.zeros(self.__tl_one_time).astype(int)
+                next_state = np.ones((self.__tl_one_time, 8, 9), dtype=np.float32) * -1
+                expert_mark = np.zeros((self.__tl_one_time, 8)).astype(int)
+                state_value = 0
+                task_num = 0
+                prob = self.__get_prob(state)
+                if prob < 0.05:
+                    state_value = state_sum
+                    self.__reply_buffer.add_memo(deal_state(np.expand_dims(state, axis=0), self.__cpu_gpu_rate),
+                                                 next_state, temp_len, state_value, task_num, expert_mark)
+                else:
+                    j = 0
+                    while j < 50:
+                        task_list = self.__generate_task()
+                        for task in task_list:
+                            temp_next = self.__get_next_state(state, task)
+                            if temp_next is not None:
+                                sin_task_len[j] = len(temp_next)
+                                expert_mark[j, 0:sin_task_len[j]] = get_expert_num(temp_next)
+                                next_state[j, 0:sin_task_len[j], :] = deal_state(temp_next, self.__cpu_gpu_rate)
+                                j += 1
+                                if j == 99:
+                                    break
+                    sin_task_len = sin_task_len[sin_task_len > 0]
+                    temp_len[:len(sin_task_len)] = sin_task_len
+                    task_num = len(sin_task_len)
+                    self.__reply_buffer.add_memo(deal_state(np.expand_dims(state, axis=0), self.__cpu_gpu_rate),
+                                                 next_state, temp_len, state_value, task_num, expert_mark)
+                if count % 512 == 0:
+                    loss += self.__update_expert()
+                    pbar.set_description(f"gpu_max: {self.__now_expect} and Loss: {loss / (int(count / 500) + 1)}")
+                if count % 2048 == 0:
+                    self.__loss = loss / (int(count / 500) + 1)
+                    self.__writer.add_scalar("avg_loss", loss / (int(count / 500) + 1), turn)
+                    turn += 1
+                    if turn % 5 == 0:
+                        self.__trained_experts[self.__now_expect].load_state_dict(self.__target_net.state_dict())
+            if self.__loss < 1:
+                self.__count += 1
+            if self.__count % 200 == 0:
+                self.__count = 1
+                self.__loss = 100
+                self.__trained_experts[self.__now_expect].load_state_dict(self.__target_net.state_dict())
+                self.__target_net.initialize_weights()
+                self.__reply_buffer.init_again()
+                torch.save(self.__trained_experts[self.__now_expect].state_dict(),
+                           path + f"/srcData/offline_task/model/{self.__filename}_model/model{self.__now_expect}.pth")
+                self.__now_expect += 1
+                # if self.__now_expect == 3:
+                #     self.__smooth_num = self.__tl_one_time
+            pbar.update(1)
+        pbar.close()
+
+
+    def __update_expert(self):
+        epoch = 2 + int(self.__reply_buffer.get_len() / 4096)
         avg_loss = 0
         for _ in range(epoch):
             state,next_state,sin_task_len,state_value,task_num_list,expert_mark = self.__reply_buffer.random_sample(512,self.__device)
@@ -260,9 +337,6 @@ class TrainBot():
                     next_state_out = [torch.sum(elem) for elem in torch.split(next_state_out, task_num.tolist())]
                     next_state_out = torch.tensor(next_state_out, dtype=torch.float32).to(self.__device).reshape(-1)
                     state_value[task_num_list > 0] += next_state_out
-                    indices = task_num_list < 1
-                    task_num_list[task_num_list<self.__smooth_num] = self.__smooth_num
-                    task_num_list[indices] = 0
                     state_value[task_num_list > 0] /= torch.tensor(task_num_list[task_num_list > 0]).to(self.__device)
             value = self.__target_net(state)
             state_value = state_value.reshape(-1, 1)
@@ -285,11 +359,13 @@ class TrainBot():
         # gpu_max = int(gpu_max * min(1.0, math.tanh(2 * i / self.__epoch))) + 1
         if self.__now_expect == 0:
             cpu_max = 0
+            gpu_min = 0
             num = 8
         else:
+            gpu_min = 1
             num = min(self.__now_expect-1,8)
         state = np.zeros(9)
-        state[1:1+num] = np.random.randint(1, gpu_max, num)
+        state[1:1+num] = np.random.randint(gpu_min, gpu_max, num)
         state = np.round(state / 10.0, 1)
         state[0] = 100
         state = abs(np.sort(-state))
@@ -300,6 +376,14 @@ class TrainBot():
     def __generate_task(self):
         temp_list = np.random.choice(range(len(self.__task_list)), size=self.__tl_one_time, replace=True)
         return self.__task_list[temp_list]
+
+    def __get_prob(self,state):
+        int_num = np.count_nonzero(state == 1)
+        if int_num > 0:
+             return self.__task_prob_int[min(int(state[0]),self.__cpu_max_num)][min(int_num,self.__gpu_max_num)] * 1.0 / self.__task_max_num
+        else:
+            return self.__task_prob_float[min(int(state[0]),self.__cpu_max_num)][int(state[1] * 10) % 10] * 1.0 / self.__task_max_num
+
 
 def get_expert_num(temp_next):
     expert = 9 - np.sum(temp_next[:,1:] == 0, axis=1).reshape(-1)
@@ -352,6 +436,7 @@ def run(filename):
     np.random.seed(seed)
     train_bot = TrainBot(filename)
     train_bot.train_expert()
+
 
 if __name__ == "__main__":
     from torch import multiprocessing as mp

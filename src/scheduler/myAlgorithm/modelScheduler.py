@@ -1,8 +1,6 @@
 from src.scheduler.schedulerClass import Scheduler
 import numpy as np
-from src.scheduler.myAlgorithm.generateValue.generateContinuousValue import StateValueExpert, deal_state, \
-    get_expert_num
-import os
+from src.scheduler.myAlgorithm.generateValue.generateContinuousValue import StateValueExpert, deal_state, get_expert_num
 from src.envSim.simParam import ParamHolder
 import torch
 
@@ -10,9 +8,12 @@ import torch
 class ModelScheduler(Scheduler):
     def __init__(self, cluster, can_predict=True, task_mem={}, node_mem={}):
         super().__init__(cluster, can_predict, task_mem, node_mem)
-        self.__device = torch.device("cpu")
+        if ParamHolder().device == "cpu":
+            self.__device = torch.device("cpu")
+        else:
+            self.__device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         self.__trained_experts = []
-        self.__gpu_gate = 0.3
+        self.__gpu_gate = 1
         self.__task_prob_int = np.loadtxt(f"../srcData/state_value/{ParamHolder().filename}/smaller_task_count_int.csv", delimiter=",")
         self.__task_prob_float = np.loadtxt(f"../srcData/state_value/{ParamHolder().filename}/smaller_task_count_float.csv", delimiter=",")
         self.__task_max_num = self.__task_prob_int.max()
@@ -27,16 +28,14 @@ class ModelScheduler(Scheduler):
         # self.__buffer = BufferArray(len(cluster))
 
     def run(self, task):
+        if task.get_id() == 0:
+            print(1)
         task_cpu, task_gpu = self.get_task_info(task)
-        # if not self.get_can_predict():
-        #     task_cpu -= 1
-        #     self.__gpu_gate = 0
         if len(task_gpu) == 0:
             task_gpu = np.array([0])
         else:
             task_gpu = task_gpu[:, 0]
         now_priority = -1e8
-        self_priority = 1e8
         now_select = -1
         gpu_select = {}
         for node in self.cluster:
@@ -50,24 +49,16 @@ class ModelScheduler(Scheduler):
                 old_state[0] = temp_node_cpu.min()
                 temp_new_state_0 = temp_node_cpu - task_cpu
                 temp_new_state_0 = temp_new_state_0.min()
-                temp_new_node_gpu = abs(np.sort(-temp_node_gpu))
-                old_state[1:1 + len(temp_new_node_gpu)] = temp_new_node_gpu - 0
-                old_value = self.__get_value(old_state).min()
+                old_state[1:1 + len(temp_node_gpu)] = abs(np.sort(-temp_node_gpu))
                 task_gpu = task_gpu.sum()
                 if task_gpu == 0:
                     new_state = old_state - 0
                     new_state[0] = temp_new_state_0
-                    new_value = self.__get_value(new_state)
-                    if now_priority  < old_value - new_value.min():
-                        now_priority = old_value - new_value.min()
-                        self_priority = new_value.min()
+                    priority,_ = self.__get_priority(old_state, new_state,0)
+                    if now_priority < priority:
+                        now_priority = priority
                         gpu_select = {}
                         now_select = node
-                    # elif now_priority + 1 > old_value - new_value > now_priority -1:
-                    #     if self_priority > new_value:
-                    #         self_priority = new_value
-                    #         gpu_select = {}
-                    #         now_select = node
                 elif task_gpu < 1:
                     gpu_list = []
                     gpu_num = []
@@ -81,24 +72,17 @@ class ModelScheduler(Scheduler):
                             if task_gpu > self.__gpu_gate and float_bool and temp_node_gpu[i] == 1:
                                 continue
                             temp_new_node_gpu[i] -= task_gpu
-                            temp_new_node_gpu = abs(np.sort(-temp_new_node_gpu))
                             new_state[0] = temp_new_state_0
-                            new_state[1:1 + len(temp_new_node_gpu)] = temp_new_node_gpu
+                            new_state[1:1 + len(temp_new_node_gpu)] = abs(np.sort(-temp_new_node_gpu))
                             gpu_list.append(new_state)
                             gpu_num.append(i)
                     if len(gpu_list) > 0:
                         new_state = np.array(gpu_list)
-                        new_value = self.__get_value(new_state)
-                        if now_priority < old_value - new_value.min():
-                            now_priority = old_value - new_value.min()
-                            self_priority = new_value.min()
-                            gpu_select ={gpu_num[torch.argmin(new_value)]: 0}
+                        priority,site = self.__get_priority(old_state,new_state,0.5)
+                        if now_priority  < priority:
+                            now_priority = priority
+                            gpu_select ={gpu_num[site]: 0}
                             now_select = node
-                        # elif now_priority + 1 > old_value - new_value.min() > now_priority - 1:
-                        #     if self_priority > new_value.min():
-                        #         self_priority = new_value.min()
-                        #         gpu_select = {gpu_num[torch.argmin(new_value)]: 0}
-                        #         now_select = node
                 else:
                     j = 0
                     new_state = np.zeros(9)
@@ -111,45 +95,65 @@ class ModelScheduler(Scheduler):
                             temp_select[i] = j
                             j += 1
                     if len(temp_select) == int(task_gpu):
-                        temp_node_gpu = abs(np.sort(-temp_node_gpu))
-                        new_state[1:1 + len(temp_node_gpu)] = temp_node_gpu
-                        new_value = self.__get_value(new_state)
-                        if now_priority  < old_value - new_value.min():
-                            now_priority = old_value - new_value.min()
-                            self_priority = new_value.min()
+                        new_state[1:1 + len(temp_node_gpu)] = abs(np.sort(-temp_node_gpu))
+                        priority,_ = self.__get_priority(old_state,new_state,int(task_gpu))
+                        if now_priority < priority:
+                            now_priority = priority
                             gpu_select = temp_select
                             now_select = node
-                        # elif now_priority + 1 > old_value - new_value > now_priority - 1:
-                        #     if self_priority > new_value:
-                        #         self_priority = new_value
-                        #         gpu_select = temp_select
-                        #         now_select = node
         if now_select != -1:
             self.set_task(now_select, task, gpu_select)
             return True
         else:
             return False
 
-    def __get_prob(self,state):
-        return 1
-        prob = []
-        for i in range(len(state)):
-            int_num = np.count_nonzero(state[i] == 1)
-            if int_num > 0:
-                prob.append(self.__task_prob_int[min(int(state[i][0]),self.__cpu_max_num)][min(int_num,self.__gpu_max_num)] * 1.0 / self.__task_max_num)
+
+    def __get_priority(self,old_state,new_state,int_num):
+        if int_num == 0:
+            prob = 0
+        elif int_num >= 1:
+            old_int_num = np.count_nonzero(old_state[1:] == 1)
+            new_int_num = old_int_num - int_num
+            if new_int_num == 0:
+                prob = 0
             else:
-                prob.append(self.__task_prob_float[min(int(state[i][0]),self.__cpu_max_num)][int(state[i][1] * 10) % 10] * 1.0 / self.__task_max_num)
-        prob = np.array(prob)
-        prob[prob < 0.05] = 0.05
-        return prob * 20
+               old_prob = self.__task_prob_int[min(int(old_state[0]), self.__cpu_max_num)][min(old_int_num, self.__gpu_max_num)] * 1.0 / self.__task_max_num
+               new_prob = self.__task_prob_int[min(int(new_state[0]), self.__cpu_max_num)][
+                              min(new_int_num, self.__gpu_max_num)] * 1.0 / self.__task_max_num
+               prob = old_prob -new_prob
+        else:
+            prob = np.zeros(len(new_state))
+            old_int_num = np.count_nonzero(old_state[1:] == 1)
+            new_int_num = np.count_nonzero(new_state[:,1:] == 1,axis=1)
+            indices = new_int_num == old_int_num
+            temp_list = []
+            temp_new_state = new_state[~indices]
+            new_int_num = new_int_num[~indices]
+            for i in range(len(temp_new_state)):
+                if new_int_num[i] == 0:
+                    old_prob = self.__task_prob_int[min(int(old_state[0]), self.__cpu_max_num)][
+                                   min(old_int_num, self.__gpu_max_num)] * 1.0 / self.__task_max_num
+                    new_prob = self.__task_prob_float[min(int(temp_new_state[i,0]), self.__cpu_max_num)][9] * 1.0 / self.__task_max_num
+                    temp_list.append(old_prob - new_prob)
+                else:
+                    old_prob = self.__task_prob_int[min(int(old_state[0]), self.__cpu_max_num)][min(old_int_num, self.__gpu_max_num)] * 1.0 / self.__task_max_num
+                    new_prob = self.__task_prob_int[min(int(temp_new_state[i,0]), self.__cpu_max_num)][min(new_int_num[i], self.__gpu_max_num)] * 1.0 / self.__task_max_num
+                    temp_list.append(old_prob - new_prob)
+            prob[~indices] = np.array(temp_list)
+            prob[~indices] += (self.__task_prob_int[min(int(old_state[0]), self.__cpu_max_num)][1] - self.__task_prob_float[min(int(old_state[0]), self.__cpu_max_num)][9]) * 1.0 / self.__task_max_num
+        with (((torch.no_grad()))):
+            old_value = self.__get_value(old_state)
+            new_value = self.__get_value(new_state)
+            value = old_value - new_value
+            value =value.numpy()
+            value -= 50 * prob
+        return value.max(),np.argmax(value)
+
+
 
     def __get_value(self,state):
         state = state.reshape(-1,9)
         expert = get_expert_num(state)
-        if self.get_can_predict():
-            prob = torch.tensor(self.__get_prob(state)).to(self.__device)
-        else:
-            prob = torch.tensor(self.__get_prob(state)).to(self.__device)
         state = deal_state(state, self._rate)
         value = torch.zeros(len(state), dtype=torch.float32).to(self.__device)
         state = torch.tensor(state,dtype=torch.float32).to(self.__device)
@@ -158,7 +162,6 @@ class ModelScheduler(Scheduler):
             temp_state = state[indices]
             if len(temp_state) > 0:
                 value[indices] = self.__trained_experts[i](temp_state).reshape(-1)
-        value /= prob
         return value
 
 #     def run(self, task):

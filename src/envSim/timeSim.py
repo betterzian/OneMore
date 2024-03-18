@@ -2,15 +2,19 @@ from src.envSim.simParam import ParamHolder
 import multiprocessing
 import threading
 
+
 class TimeSim:
     """
     时间模拟器，使用单例模式，一个进程一个。
     其中self.__time_init_flag为模拟开始时间，在此时间之前的数据为历史数据，可供预测使用。
     """
-    def __init__(self,time_len,time_init_flag,time_end_flag):
-        self.__time_len = time_len
-        self.__time_init_flag = time_init_flag
-        self.__time_end_flag = time_end_flag
+
+    def __init__(self, wait=True):
+        if wait:
+            return
+        self.__time_len = ParamHolder().time_len
+        self.__time_init_flag = ParamHolder().time_init_flag
+        self.__time_end_flag = ParamHolder().time_end_flag
         self.__time = 0
         self.__fake_time_left = self.__time_end_flag - self.__time_init_flag
         self.__time_left = self.__time_len - self.__time_init_flag
@@ -38,16 +42,18 @@ class TimeSim:
     def get_time(self):
         return self.__time
 
-    def init_again(self,args_list):
-        self.__init__(args_list)
+    def init_again(self, ):
+        self.__init__(False)
+
 
 class TimeHolder:
     _instances = {}
-    def __new__(cls, *args, **kwargs) -> TimeSim:
+
+    def __new__(cls, wait=False, *args, **kwargs) -> TimeSim:
         process_id = multiprocessing.current_process().pid
         thread_id = threading.get_ident()
         if process_id not in cls._instances:
             cls._instances[process_id] = {}
         if thread_id not in cls._instances[process_id]:
-            cls._instances[process_id][thread_id] = TimeSim(ParamHolder().time_len,ParamHolder().time_init_flag,ParamHolder().time_end_flag)
+            cls._instances[process_id][thread_id] = TimeSim(wait)
         return cls._instances[process_id][thread_id]

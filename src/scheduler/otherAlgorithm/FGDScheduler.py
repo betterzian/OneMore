@@ -12,6 +12,8 @@ class FGDScheduler(Scheduler):
         self.online_scheduler = VarianceScheduler(cluster, can_predict, self._task_mem, self._node_mem)
 
     def run(self, task):
+        if task.get_id() == 0:
+            print(1)
         if task.get_arrive_time() < 0:
             return self.online_scheduler.run(task)
         task_cpu, task_gpu = self.get_task_info(task)

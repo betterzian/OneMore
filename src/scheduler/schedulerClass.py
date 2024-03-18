@@ -7,17 +7,20 @@ from abc import abstractmethod
 from src.envSim.timeSim import TimeHolder
 import time
 
+
 class Mem:
     def __init__(self):
         self.time = TimeHolder().get_time()
         self.mem = None
 
+
 class Scheduler:
-    def __init__(self,cluster:list[Node],can_predict,task_mem, node_mem, time_can_predict = ParamHolder().time_can_predict,time_block_size = ParamHolder().time_block_size):
+    def __init__(self, cluster: list[Node], can_predict, task_mem, node_mem,
+                 time_can_predict=ParamHolder().time_can_predict, time_block_size=ParamHolder().time_block_size):
         self.cluster = cluster
         self.__can_predict = can_predict
-        self.__time_can_predict = time_can_predict #可预测时间长度，如=720，720 *10 = 7200s
-        self.__time_block_size = time_block_size #单个预测值代表的时间长度，如=90，90*10 = 900s
+        self.__time_can_predict = time_can_predict  # 可预测时间长度，如=720，720 *10 = 7200s
+        self.__time_block_size = time_block_size  # 单个预测值代表的时间长度，如=90，90*10 = 900s
         self._reschedule_num = 0
         self._success_num = 0
         self._fail_num = 0
@@ -33,15 +36,13 @@ class Scheduler:
         self._force_num = 0
 
     @abstractmethod
-    def run(self,task:Task):
+    def run(self, task: Task):
         pass
 
-
-
-    def add_reschedule_num(self,num=1):
+    def add_reschedule_num(self, num=1):
         self._reschedule_num += num
 
-    def add_fail_num(self,num=1):
+    def add_fail_num(self, num=1):
         self._fail_num += num
 
     def get_can_predict(self):
@@ -77,14 +78,14 @@ class Scheduler:
     def get_force_num(self):
         return self._force_num
 
-    def __deal_data(self,temp_cpu,temp_gpu,func):
+    def __deal_data(self, temp_cpu, temp_gpu, func):
         cpu = temp_cpu[0:ParamHolder().time_accurately_predict]
         gpu = []
         for i in range(len(temp_gpu)):
             gpu.append(temp_gpu[i][0:ParamHolder().time_accurately_predict])
         if ParamHolder().time_accurately_predict >= len(temp_cpu):
             gpu = np.array(gpu)
-            return cpu,gpu
+            return cpu, gpu
         temp_cpu = temp_cpu[ParamHolder().time_accurately_predict:]
         split_indices = np.arange(self.__time_block_size, len(temp_cpu), self.__time_block_size)
         sub_arrays = np.split(temp_cpu, split_indices)
@@ -95,26 +96,27 @@ class Scheduler:
             sub_arrays = np.split(temp_gpu_i, split_indices)
             gpu[i] = np.concatenate((gpu[i], np.array([func(sub_array) for sub_array in sub_arrays])), axis=0)
         gpu = np.array(gpu)
-        return cpu,gpu
+        return cpu, gpu
 
-    def __return_task_mem(self,mem):
+    def __return_task_mem(self, mem):
         cpu = mem[0][:self._task_len]
         cpu = cpu - 0
         gpu = mem[1]
         if len(gpu) != 0:
-            gpu = gpu[:,:self._task_len]
+            gpu = gpu[:, :self._task_len]
             gpu = gpu - 0
-        return cpu,np.array(gpu)
+        return cpu, np.array(gpu)
 
-    def get_task_info(self,task:Task):
+    def get_task_info(self, task: Task):
         task_mem = None
         temp_cpu = task.get_cpu_info(self.__can_predict)
-        min_len = min(len(temp_cpu),self.__time_can_predict,TimeHolder().get_time_left())
+        min_len = min(len(temp_cpu), self.__time_can_predict, TimeHolder().get_time_left())
         if min_len <= ParamHolder().time_accurately_predict:
             self._task_len = min_len
         else:
-            self._task_len = ParamHolder().time_accurately_predict + math.ceil((min_len - ParamHolder().time_accurately_predict) / ParamHolder().time_block_size)
-        if task.get_arrive_time() >= 0: #为离线任务，每次获取的信息应该相同，可以写入缓存中加速
+            self._task_len = ParamHolder().time_accurately_predict + math.ceil(
+                (min_len - ParamHolder().time_accurately_predict) / ParamHolder().time_block_size)
+        if task.get_arrive_time() >= 0:  # 为离线任务，每次获取的信息应该相同，可以写入缓存中加速
             if task.get_id() not in self._task_mem:
                 self._task_mem[task.get_id()] = Mem()
             task_mem = self._task_mem[task.get_id()]
@@ -127,17 +129,17 @@ class Scheduler:
             temp = []
             for i in range(len(temp_gpu)):
                 temp.append(temp_gpu[i][:min_len])
-            cpu,gpu = self.__deal_data(temp_cpu,temp,np.max)
+            cpu, gpu = self.__deal_data(temp_cpu, temp, np.max)
         else:
             cpu = task.get_cpu_info(self.__can_predict)
             gpu = task.get_gpu_info(self.__can_predict)
         if task_mem is None:
-            return np.array(cpu)-0,np.array(gpu)-0
-        task_mem.mem = (cpu,gpu)
+            return np.array(cpu) - 0, np.array(gpu) - 0
+        task_mem.mem = (cpu, gpu)
         self._task_no_cache_num += 1
         return self.__return_task_mem(task_mem.mem)
 
-    def get_node_info(self,node:Node):
+    def get_node_info(self, node: Node):
         if node.get_id() not in self._node_mem:
             self._node_mem[node.get_id()] = Mem()
         node_mem = self._node_mem[node.get_id()]
@@ -147,7 +149,7 @@ class Scheduler:
         if self.__can_predict:
             temp_cpu = node.get_cpu_info(self.__time_can_predict)
             temp_gpu = node.get_gpu_info(self.__time_can_predict)
-            cpu,gpu = self.__deal_data(temp_cpu,temp_gpu,np.min)
+            cpu, gpu = self.__deal_data(temp_cpu, temp_gpu, np.min)
         else:
             cpu = node.get_cpu_info(1)
             gpu = node.get_gpu_info(1)
@@ -156,11 +158,11 @@ class Scheduler:
         self._node_no_cache_num += 1
         return self.__return_task_mem(node_mem.mem)
 
-    def set_task(self,node:Node,task:Task,gpu_site={}):
-        node.set_task(task,gpu_site)
+    def set_task(self, node: Node, task: Task, gpu_site={}):
+        node.set_task(task, gpu_site)
         self._node_mem[node.get_id()].mem = None
 
-    def force_set_online_task(self,task:Task):
+    def force_set_online_task(self, task: Task):
         priority = 999999999
         task_cpu = task.get_cpu_info(self.__can_predict)
         task_cpu = task_cpu[:ParamHolder().time_accurately_predict]
@@ -175,10 +177,11 @@ class Scheduler:
                 waste_time = (TimeHolder().get_time() - temp_task.get_start_time())
                 temp_priority += temp_task.get_task_weight() * waste_time
                 temp_cpu = temp_task.get_cpu_info()[waste_time:]
-                temp_cpu = temp_cpu[:min(ParamHolder().time_accurately_predict,TimeHolder().get_time_left())]
+                temp_cpu = temp_cpu[:min(ParamHolder().time_accurately_predict, TimeHolder().get_time_left())]
                 if not self.__can_predict:
                     temp_cpu = temp_cpu[:1]
-                temp_node_cpu = np.concatenate((temp_node_cpu[:len(temp_cpu)]+temp_cpu,temp_node_cpu[len(temp_cpu):]),axis=0)
+                temp_node_cpu = np.concatenate(
+                    (temp_node_cpu[:len(temp_cpu)] + temp_cpu, temp_node_cpu[len(temp_cpu):]), axis=0)
                 if np.any(task_cpu > temp_node_cpu):
                     continue
                 else:
@@ -188,10 +191,17 @@ class Scheduler:
             if temp_priority < priority:
                 priority = temp_priority
                 now_select = node
-        assert now_select != -1,"在线任务无法放置"
-        self.set_task(now_select,task,{})
+        assert now_select != -1, "在线任务无法放置"
+        self.set_task(now_select, task, {})
         self._force_num += 1
         return now_select.check()
 
-
-
+    def get_all_node_info(self):
+        node_info = np.zeros((len(self.cluster), 9))
+        for i in range(len(self.cluster)):
+            cpu, gpu = self.get_node_info(self.cluster[i])
+            node_info[i][0] = cpu[0]
+            if len(gpu) != 0:
+                gpu = gpu[:, 0].reshape(-1)
+                node_info[i][1:1+len(gpu)] = gpu
+        return node_info

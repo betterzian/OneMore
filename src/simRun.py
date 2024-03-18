@@ -1,4 +1,4 @@
-def run(scheduler, online_task_list, offline_task_list):
+def sim_run(scheduler, online_task_list, offline_task_list):
     from src.envSim.timeSim import TimeHolder
     from envSim.saveInfo import save_info
     from tqdm import tqdm
@@ -47,6 +47,8 @@ def run(scheduler, online_task_list, offline_task_list):
             else:
                 offline_task_list.append(task)
         while offline_task_list:
+            # if len(offline_task_list) == 1:
+            #     print(1)
             if offline_task_list[-1].get_arrive_time() <= now_time:
                 now_task = offline_task_list.pop()
             else:
@@ -68,33 +70,4 @@ def run(scheduler, online_task_list, offline_task_list):
     with open('../tmp/'+ParamHolder().csv_name+'.txt', 'a') as file:
         file.write('ok\n')
 
-def sim_run(args_dict):
-    from src.envSim.simParam import ParamHolder
-    ParamHolder(args_dict)
-    file = open('../tmp/all_'+ParamHolder().csv_name+'.txt', "w")
-    file.close()
-    from src.envSim.offlineTaskDataProcess import offline_data_process
-    offline_data_process(ParamHolder().filename)
-    args_dict["cgr"] = ParamHolder().cpu_gpu_rate
-    args_dict["csv_name"] = ParamHolder().csv_name
-    from src.envSim.simParam import ParamHolder
-    from envSim.generateEnv import generate_cluster, generate_online_task_list, generate_offline_task_list
-    from scheduler.schedulerList import init_scheduler
-    from multiprocessing import Pool
-    from src.envSim.TXTtoCSV import txt_to_csv
-    cluster = generate_cluster()
-    online_task_list = generate_online_task_list()
-    offline_task_list = generate_offline_task_list()
-    schedulers = init_scheduler(cluster)
-    if not args_dict["test"]:
-        p = Pool(len(schedulers))
-        for scheduler in schedulers:
-            p.apply_async(run, args=(scheduler, online_task_list, offline_task_list))
-        p.close()
-        p.join()
-    else:
-        for scheduler in schedulers:
-            print("单进程,测试用")
-            run(scheduler, online_task_list, offline_task_list)
-    if ParamHolder().csv_name[:3] != "all":
-        txt_to_csv(ParamHolder().csv_name)
+

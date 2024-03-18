@@ -20,10 +20,14 @@ class SimParam:
         self.node_type = args_list["nt"]
         self.node_num = args_list["nn"]
         self.filename = args_list["filename"]
+        self.device = args_list["device"]
         if not args_list["csv_name"]:
             self.csv_name = str(current_time.year) + "_" + str(current_time.month) + "_" + str(current_time.day) + "_" + str(current_time.hour) + "_" + str(current_time.minute) + "_" + str(current_time.second)
         else:
             self.csv_name = args_list["csv_name"]
+
+    def init_again(self,args_list):
+        self.__init__(args_list)
 
     def __get_cgr(self,filename):
         if os.path.exists("../srcData/state_value/" + filename + "/state_int.csv"):
@@ -37,12 +41,5 @@ class ParamHolder:
     _instance = None
     def __new__(cls, args_dict=None) -> SimParam:
         if cls._instance is None:
-            if args_dict is None:
-                with open("../tmp/param/args.json", "r+") as json_file:
-                    args_dict = json.load(json_file)
-                    args_dict["reader"] += 1
-                    json_file.seek(0)
-                    json_file.truncate()
-                    json.dump(args_dict, json_file)
             cls._instance = SimParam(args_dict)
         return cls._instance
