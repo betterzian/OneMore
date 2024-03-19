@@ -36,7 +36,7 @@ def run(args_dict):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='param')
-    parser.add_argument('--test', action='store_true')
+    parser.add_argument('--test', action='store_false')
     parser.add_argument('--gather', action='store_false')
     parser.add_argument('--tl', type=int, default=17280)
     parser.add_argument('--tif', type=int, default=0)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('--tcp', type=int, default=8640)
     parser.add_argument('--tbs', type=int, default=90)
     parser.add_argument('--tap', type=int, default=90)
-    parser.add_argument('--ontn', type=int, default=10000)
+    parser.add_argument('--ontn', type=int, default=10)
     parser.add_argument('--oftn', type=int, default=2000)
     parser.add_argument('--filename', type=str, default="openb_pod_list_gpushare100")
     # parser.add_argument('--nt', type=list, default=((42,4),))

@@ -80,11 +80,8 @@ class Scheduler:
 
     def __deal_data(self, temp_cpu, temp_gpu, func):
         cpu = temp_cpu[0:ParamHolder().time_accurately_predict]
-        gpu = []
-        for i in range(len(temp_gpu)):
-            gpu.append(temp_gpu[i][0:ParamHolder().time_accurately_predict])
+        gpu = temp_gpu[:,0:ParamHolder().time_accurately_predict]
         if ParamHolder().time_accurately_predict >= len(temp_cpu):
-            gpu = np.array(gpu)
             return cpu, gpu
         temp_cpu = temp_cpu[ParamHolder().time_accurately_predict:]
         split_indices = np.arange(self.__time_block_size, len(temp_cpu), self.__time_block_size)
@@ -100,12 +97,8 @@ class Scheduler:
 
     def __return_task_mem(self, mem):
         cpu = mem[0][:self._task_len]
-        cpu = cpu - 0
-        gpu = mem[1]
-        if len(gpu) != 0:
-            gpu = gpu[:, :self._task_len]
-            gpu = gpu - 0
-        return cpu, np.array(gpu)
+        gpu = mem[1][:,:self._task_len]
+        return cpu.copy(), gpu.copy()
 
     def get_task_info(self, task: Task):
         task_mem = None
@@ -125,16 +118,13 @@ class Scheduler:
                 return self.__return_task_mem(task_mem.mem)
         if self.__can_predict:
             temp_cpu = temp_cpu[:min_len]
-            temp_gpu = task.get_gpu_info(self.__can_predict)
-            temp = []
-            for i in range(len(temp_gpu)):
-                temp.append(temp_gpu[i][:min_len])
-            cpu, gpu = self.__deal_data(temp_cpu, temp, np.max)
+            temp_gpu = task.get_gpu_info(self.__can_predict)[:,:min_len]
+            cpu, gpu = self.__deal_data(temp_cpu, temp_gpu, np.max)
         else:
             cpu = task.get_cpu_info(self.__can_predict)
             gpu = task.get_gpu_info(self.__can_predict)
         if task_mem is None:
-            return np.array(cpu) - 0, np.array(gpu) - 0
+            return cpu.copy(), gpu.copy()
         task_mem.mem = (cpu, gpu)
         self._task_no_cache_num += 1
         return self.__return_task_mem(task_mem.mem)

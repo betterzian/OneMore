@@ -11,7 +11,6 @@ def init_scheduler(cluster):
     can_predict = [False,True,]
     for temp in can_predict:
         schedulers.append(OneMoreModelScheduler(cluster, temp))
-
         #schedulers.append(OneMoreScheduler(cluster,temp))
         schedulers.append(FGDScheduler(cluster,temp))
         schedulers.append(VarianceScheduler(cluster,temp))
