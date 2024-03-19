@@ -13,7 +13,6 @@ def sim_run(scheduler, online_task_list, offline_task_list):
         isOk = scheduler.run(now_task)
         if not isOk:
             fail_task.append(now_task)
-    #save_info(scheduler)
     pbar = tqdm(total=TimeHolder().get_time_left(),
                 desc=type(scheduler).__name__ + "," + str(scheduler.get_can_predict()))
     reschedule_task = []
@@ -47,8 +46,6 @@ def sim_run(scheduler, online_task_list, offline_task_list):
             else:
                 offline_task_list.append(task)
         while offline_task_list:
-            # if len(offline_task_list) == 1:
-            #     print(1)
             if offline_task_list[-1].get_arrive_time() <= now_time:
                 now_task = offline_task_list.pop()
             else:
@@ -60,11 +57,9 @@ def sim_run(scheduler, online_task_list, offline_task_list):
         TimeHolder().add_time()
         pbar.update(1)
     scheduler.set_time()
-    while TimeHolder().get_time_left() > 0:
-        for node in scheduler.cluster:
-            node.check()
+    for node in scheduler.cluster:
+        node.check(all_bool=True)
         TimeHolder().add_time()
-        pbar.update(1)
     save_info(scheduler)
     pbar.close()
     with open('../tmp/'+ParamHolder().csv_name+'.txt', 'a') as file:

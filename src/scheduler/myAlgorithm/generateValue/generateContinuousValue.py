@@ -8,7 +8,6 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 import random
-import math
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 import json
@@ -58,12 +57,14 @@ class StateValueExpert(nn.Module):
         x = F.relu(self.fc3(x))
         x = self.fc4(x)
         return self.sp(x)
+
     def initialize_weights(self):
         for name, param in self.named_parameters():
             if 'weight' in name:
                 torch.nn.init.normal_(param, mean=0, std=0.01)
             elif 'bias' in name:
                 torch.nn.init.normal_(param, mean=0, std=0.01)
+
 
 class MoE(nn.Module):
     def __init__(self, trained_experts):
@@ -87,8 +88,6 @@ class MoE(nn.Module):
         # Multiply the expert outputs with the weights and
         # sum along the third dimension
         return torch.sum(outputs * weights, dim=2)
-
-
 
 
 class BufferArray:
@@ -176,18 +175,8 @@ class TrainBot():
             self.__trained_experts.append(StateValueExpert(9).to(self.__device))
             if os.path.exists(path + f"/srcData/offline_task/model/{self.__filename}_model/model{i}.pth"):
                 self.__trained_experts[i].load_state_dict(torch.load(path + f"/srcData/offline_task/model/{self.__filename}_model/model{i}.pth"))
-        # for i in range(10):
-        #     self.__trained_experts.append(StateValueExpert2(9).to(self.__device))
-        #     if os.path.exists(path + f"/srcData/offline_task/model/{self.__filename}_model/model{i}.pth"):
-        #         self.__trained_experts[i].load_state_dict(
-        #             torch.load(path + f"/srcData/offline_task/model/{self.__filename}_model/model{i}.pth"))
-        # self.__state_value = MoE(self.__trained_experts).to(self.__device)
-        # self.__state_value.train()
         self.__target_net = StateValueExpert(9).to(self.__device)
         self.__optimizer = torch.optim.Adam(self.__target_net.parameters(),lr=self.__lr)
-        # if os.path.exists(path+f"/srcData/offline_task/model/{self.__filename}_model/model.pth"):
-        #     self.__state_value.load_state_dict(torch.load(path+f"/srcData/offline_task/model/{self.__filename}_model/model.pth"))
-        # self.__moe_optimizers = torch.optim.Adam(self.__state_value.parameters(), lr=self.__lr)
         self.__criterion = nn.HuberLoss()
         self.__task_list = np.loadtxt(path+f"/srcData/state_value/{self.__filename}/off_task_list.csv", delimiter=',', dtype=float)
         self.__task_len = len(self.__task_list)
@@ -256,67 +245,38 @@ class TrainBot():
             pbar.update(1)
         pbar.close()
 
-    def train(self):
-        pbar = tqdm(total=self.__epoch, desc=f"{self.__filename} epoch")
-        turn = 0
-        while self.__now_expect < 10:
-            loss = 0
-            for count in range(1, 2049):
-                state, state_sum = self.__generate_state()
-                sin_task_len = np.zeros(self.__tl_one_time).astype(int)
-                temp_len = np.zeros(self.__tl_one_time).astype(int)
-                next_state = np.ones((self.__tl_one_time, 8, 9), dtype=np.float32) * -1
-                expert_mark = np.zeros((self.__tl_one_time, 8)).astype(int)
-                state_value = 0
-                task_num = 0
-                prob = self.__get_prob(state)
-                if prob < 0.05:
-                    state_value = state_sum
-                    self.__reply_buffer.add_memo(deal_state(np.expand_dims(state, axis=0), self.__cpu_gpu_rate),
-                                                 next_state, temp_len, state_value, task_num, expert_mark)
-                else:
-                    j = 0
-                    while j < 50:
-                        task_list = self.__generate_task()
-                        for task in task_list:
-                            temp_next = self.__get_next_state(state, task)
-                            if temp_next is not None:
-                                sin_task_len[j] = len(temp_next)
-                                expert_mark[j, 0:sin_task_len[j]] = get_expert_num(temp_next)
-                                next_state[j, 0:sin_task_len[j], :] = deal_state(temp_next, self.__cpu_gpu_rate)
-                                j += 1
-                                if j == 99:
-                                    break
-                    sin_task_len = sin_task_len[sin_task_len > 0]
-                    temp_len[:len(sin_task_len)] = sin_task_len
-                    task_num = len(sin_task_len)
-                    self.__reply_buffer.add_memo(deal_state(np.expand_dims(state, axis=0), self.__cpu_gpu_rate),
-                                                 next_state, temp_len, state_value, task_num, expert_mark)
-                if count % 512 == 0:
-                    loss += self.__update_expert()
-                    pbar.set_description(f"gpu_max: {self.__now_expect} and Loss: {loss / (int(count / 500) + 1)}")
-                if count % 2048 == 0:
-                    self.__loss = loss / (int(count / 500) + 1)
-                    self.__writer.add_scalar("avg_loss", loss / (int(count / 500) + 1), turn)
-                    turn += 1
-                    if turn % 5 == 0:
-                        self.__trained_experts[self.__now_expect].load_state_dict(self.__target_net.state_dict())
-            if self.__loss < 1:
-                self.__count += 1
-            if self.__count % 200 == 0:
-                self.__count = 1
-                self.__loss = 100
-                self.__trained_experts[self.__now_expect].load_state_dict(self.__target_net.state_dict())
-                self.__target_net.initialize_weights()
-                self.__reply_buffer.init_again()
-                torch.save(self.__trained_experts[self.__now_expect].state_dict(),
-                           path + f"/srcData/offline_task/model/{self.__filename}_model/model{self.__now_expect}.pth")
-                self.__now_expect += 1
-                # if self.__now_expect == 3:
-                #     self.__smooth_num = self.__tl_one_time
-            pbar.update(1)
-        pbar.close()
 
+    def train(self):
+        self.__target_net.initialize_weights()
+        self.__criterion = nn.MSELoss()
+        epoch = 200000
+        pbar = tqdm(total=epoch, desc=f"{self.__filename} epoch")
+        avg_loss = 0
+        for turn in range(epoch):
+            state = self.__generate_state(batch_size=512)
+            expert_mark = get_expert_num(state)
+            state = deal_state(state,self.__cpu_gpu_rate)
+            state = torch.tensor(state,dtype=torch.float32).to(self.__device)
+            with torch.no_grad():
+                real_value = torch.zeros(len(state),dtype=torch.float32).to(self.__device)
+                for i in range(len(self.__trained_experts)):
+                    indices = expert_mark == i
+                    temp_state = state[indices]
+                    if len(temp_state) > 0:
+                        real_value[indices] = self.__trained_experts[i](temp_state).reshape(-1)
+            value = self.__target_net(state)
+            loss = self.__criterion(value,real_value.reshape(-1,1))
+            self.__writer.add_scalar("loss", loss, turn)
+            self.__optimizer.zero_grad()
+            loss.backward()
+            self.__optimizer.step()
+            avg_loss = abs(value - real_value.reshape(-1,1)).mean()
+            pbar.set_description(f"Loss: {avg_loss}")
+            pbar.update(1)
+            if turn % 1000 == 0:
+                torch.save(self.__target_net.state_dict(),
+                           path + f"/srcData/offline_task/model/{self.__filename}_model/model.pth")
+        pbar.close()
 
     def __update_expert(self):
         epoch = 2 + int(self.__reply_buffer.get_len() / 4096)
@@ -355,23 +315,30 @@ class TrainBot():
             data = json.load(json_file)
             return data["cgr"]
 
-    def __generate_state(self, i=0, cpu_max=129, gpu_max=11):
-        # gpu_max = int(gpu_max * min(1.0, math.tanh(2 * i / self.__epoch))) + 1
-        if self.__now_expect == 0:
-            cpu_max = 0
-            gpu_min = 0
-            num = 8
+    def __generate_state(self, cpu_max=129, gpu_max=11, batch_size = 1):
+        if batch_size == 1:
+            if self.__now_expect == 0:
+                cpu_max = 0
+                gpu_min = 0
+                num = 8
+            else:
+                gpu_min = 1
+                num = min(self.__now_expect-1,8)
+            state = np.zeros(9)
+            state[1:1+num] = np.random.randint(gpu_min, gpu_max, num)
+            state = np.round(state / 10.0, 1)
+            state[0] = 100
+            state = abs(np.sort(-state))
+            state[0] = random.randint(0, cpu_max)
+            state_sum = state[0] + state[1:].sum()*self.__cpu_gpu_rate
+            return state,state_sum+9
         else:
-            gpu_min = 1
-            num = min(self.__now_expect-1,8)
-        state = np.zeros(9)
-        state[1:1+num] = np.random.randint(gpu_min, gpu_max, num)
-        state = np.round(state / 10.0, 1)
-        state[0] = 100
-        state = abs(np.sort(-state))
-        state[0] = random.randint(0, cpu_max)
-        state_sum = state[0] + state[1:].sum()*self.__cpu_gpu_rate
-        return state,state_sum+9
+            state = np.zeros((batch_size,9))
+            state[:,0] = np.random.randint(0, cpu_max,size=(batch_size,))
+            state[:,1:] = np.round(np.random.randint(0, gpu_max, size=(batch_size,8))/10.0,1)
+            state[:,1:] = abs(np.sort(-state[:,1:],axis=1))
+            return state
+
 
     def __generate_task(self):
         temp_list = np.random.choice(range(len(self.__task_list)), size=self.__tl_one_time, replace=True)
@@ -386,9 +353,9 @@ class TrainBot():
 
 
 def get_expert_num(temp_next):
-    expert = 9 - np.sum(temp_next[:,1:] == 0, axis=1).reshape(-1)
+    expert = 9 - torch.sum(temp_next[:,1:] == 0, dim=1).view(-1)
     expert[temp_next[:,0] == 0] = 0
-    expert = expert.astype(int)
+    expert = expert.to(torch.int)
     return expert
 
 def get_next_state(state, task):
@@ -423,9 +390,7 @@ def get_next_state(state, task):
     return next_state.reshape(-1, 9)
 
 def deal_state(state,rate):
-    cpu = state[:,0] - 0
-    state *= rate
-    state[:,0] = cpu
+    state[:,1:] *= rate
     state += 1
     return state
 
@@ -435,7 +400,8 @@ def run(filename):
     torch.manual_seed(seed)
     np.random.seed(seed)
     train_bot = TrainBot(filename)
-    train_bot.train_expert()
+    #train_bot.train_expert()
+    train_bot.train()
 
 
 if __name__ == "__main__":

@@ -25,21 +25,20 @@ class TimeBlockSim:
             else:
                 self.__data = np.ones((self.__length, self.__time_len))
 
-    def set_info(self, data, start=-1, dic=None):
-        if dic is None and self.__is_cpu:
-            dic = {0: 0}
+    def _set_info(self, data, start, dic):
         if start == -1:
             start = TimeHolder().get_time() + self.__time_flag
-        if self.__data:
-            data_len = len(data[1])
-            self.__data[np.array(list(dic.key())), start:start + data_len] = np.round(self.__data[np.array(list(dic.key())), start:start + data_len] - data[np.array(list(dic.values()))], 1)
+        data_len = len(data[0])
+        self.__data[np.array(list(dic.keys())), start:start + data_len] = np.round(self.__data[np.array(list(dic.keys())), start:start + data_len] - data[np.array(list(dic.values()))], 1)
 
-    def get_info(self, len=-1):
-        if len < 0:  # 返回所有资源信息
+    def _get_info(self, length):
+        if length < 0:  # 返回所有资源信息
             return self.__data[:,self.__time_flag:].copy()
         temp_time_flag = TimeHolder().get_time() + self.__time_flag
-        return self.__data[:,temp_time_flag:temp_time_flag + len].copy()  # 返回当前时刻后的资源
+        return self.__data[:,temp_time_flag:temp_time_flag + length].copy()  # 返回当前时刻后的资源
 
-    def check(self):
+    def check(self, all_bool):
         time = TimeHolder().get_time() + TimeHolder().get_time_init_flag()
-        return np.any(self.__data[:,time] < 0)
+        if all_bool:
+            return self.__data[:, time:].min() < 0
+        return self.__data[:, time].min() < 0

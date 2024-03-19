@@ -84,20 +84,30 @@ class Scheduler:
         if ParamHolder().time_accurately_predict >= len(temp_cpu):
             return cpu, gpu
         temp_cpu = temp_cpu[ParamHolder().time_accurately_predict:]
-        split_indices = np.arange(self.__time_block_size, len(temp_cpu), self.__time_block_size)
+        length = len(temp_cpu)
+        split_indices = np.arange(self.__time_block_size, length, self.__time_block_size)
         sub_arrays = np.split(temp_cpu, split_indices)
         cpu = np.concatenate((cpu, np.array([func(sub_array) for sub_array in sub_arrays])), axis=0)
-        for i in range(len(temp_gpu)):
-            temp_gpu_i = temp_gpu[i][ParamHolder().time_accurately_predict:]
-            split_indices = np.arange(self.__time_block_size, len(temp_gpu_i), self.__time_block_size)
-            sub_arrays = np.split(temp_gpu_i, split_indices)
-            gpu[i] = np.concatenate((gpu[i], np.array([func(sub_array) for sub_array in sub_arrays])), axis=0)
-        gpu = np.array(gpu)
+        if temp_gpu.size > 0:
+            temp_gpu = temp_gpu[:,ParamHolder().time_accurately_predict:]
+            split_indices = np.arange(self.__time_block_size, length, self.__time_block_size)
+            sub_arrays = np.split(temp_gpu, split_indices,axis=1)
+            gpu = np.concatenate((gpu, np.array([func(sub_array,axis=1) for sub_array in sub_arrays]).transpose()), axis=1)
+        # if temp_gpu.size > 0:
+        #     for i in range(len(temp_gpu)):
+        #         temp_gpu_i = temp_gpu[i][ParamHolder().time_accurately_predict:]
+        #         split_indices = np.arange(self.__time_block_size, len(temp_gpu_i), self.__time_block_size)
+        #         sub_arrays = np.split(temp_gpu_i, split_indices)
+        #         results = np.apply_along_axis(func, 1, sub_arrays)
+        #         gpu[i] = np.concatenate([gpu[i], results], axis=0)
+        #     gpu = np.array(gpu)
         return cpu, gpu
 
     def __return_task_mem(self, mem):
         cpu = mem[0][:self._task_len]
-        gpu = mem[1][:,:self._task_len]
+        gpu = mem[1]
+        if gpu.size > 0:
+            gpu = gpu[:,:self._task_len]
         return cpu.copy(), gpu.copy()
 
     def get_task_info(self, task: Task):
@@ -123,6 +133,8 @@ class Scheduler:
         else:
             cpu = task.get_cpu_info(self.__can_predict)
             gpu = task.get_gpu_info(self.__can_predict)
+        if gpu.size == 0:
+            gpu = np.array([])
         if task_mem is None:
             return cpu.copy(), gpu.copy()
         task_mem.mem = (cpu, gpu)
@@ -143,6 +155,8 @@ class Scheduler:
         else:
             cpu = node.get_cpu_info(1)
             gpu = node.get_gpu_info(1)
+        if gpu.size == 0:
+            gpu = np.array([])
         node_mem.time = TimeHolder().get_time()
         node_mem.mem = (cpu, gpu)
         self._node_no_cache_num += 1

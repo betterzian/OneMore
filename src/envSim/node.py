@@ -80,17 +80,16 @@ class Node:
         if start >= 0:
             start = task.get_start_time()
         self.__cpu.set_info(-task.get_cpu_info(), start)
-        self.__cpu.set_info(-task.get_cpu_info(), start, task.get_gpu_site())
+        self.__gpu.set_info(-task.get_gpu_info(), start, task.get_gpu_site())
         task.pop_task()
 
-    def __check_resource(self):
-        cpu = self.__cpu.check()
-        gpu = self.__gpu.check()
+    def __check_resource(self, all_bool):
+        cpu = self.__cpu.check(all_bool)
+        gpu = self.__gpu.check(all_bool)
         return not (cpu or gpu)
 
-
-    def check(self):
-        if self.__check_resource():
+    def check(self, all_bool=False):
+        if self.__check_resource(all_bool):
             return []
         pop_list = []
         while self.__offline_task_list:
@@ -100,13 +99,13 @@ class Node:
                 continue
             self.pop_task(task)
             pop_list.append(task)
-            if self.__check_resource():
+            if self.__check_resource(all_bool):
                 return pop_list
         while self.__online_task_list:
             task = self.__online_task_list.pop()
             self.pop_task(task)
             pop_list.append(task)
-            if self.__check_resource():
+            if self.__check_resource(all_bool):
                 return pop_list
         return pop_list
 

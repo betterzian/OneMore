@@ -65,7 +65,7 @@ class Task:
             length = min(len(self.__cpu.get_info()), TimeHolder().get_time_left())
             return temp_gpu[:,:length]
         else:
-            return self.__gpu.get_info()[:,0]
+            return self.__gpu.get_info(1)
 
     def get_gpu_site(self):
         return self.__gpu_site

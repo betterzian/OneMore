@@ -3,19 +3,16 @@ from src.scheduler.myAlgorithm.varianceScheduler import VarianceScheduler
 from src.envSim.generateEnv import generate_offline_task_list
 import numpy as np
 
-
 class FGDScheduler(Scheduler):
     def __init__(self, cluster, can_predict=True, task_mem={}, node_mem={}):
         super().__init__(cluster, can_predict, task_mem, node_mem)
         self.__offline_task_list = generate_offline_task_list(all=True)
         self.__offline_task_len = len(self.__offline_task_list)
-        self.online_scheduler = VarianceScheduler(cluster, can_predict, self._task_mem, self._node_mem)
+        #self.online_scheduler = VarianceScheduler(cluster, can_predict, self._task_mem, self._node_mem)
 
     def run(self, task):
-        if task.get_id() == 0:
-            print(1)
-        if task.get_arrive_time() < 0:
-            return self.online_scheduler.run(task)
+        # if task.get_arrive_time() < 0:
+        #     return self.online_scheduler.run(task)
         task_cpu, task_gpu = self.get_task_info(task)
         if len(task_gpu) > 0:
             task_gpu = task_gpu[:, 0]
