@@ -1,8 +1,7 @@
 import math
-
+import numpy as np
 from src.envSim.cpuGpu import Cpu, Gpu
 from src.envSim.timeSim import TimeHolder
-import numpy as np
 from src.envSim.simParam import ParamHolder
 
 

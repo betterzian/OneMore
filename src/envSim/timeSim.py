@@ -49,7 +49,7 @@ class TimeSim:
 class TimeHolder:
     _instances = {}
 
-    def __new__(cls, wait=False, *args, **kwargs) -> TimeSim:
+    def __new__(cls, wait=True, *args, **kwargs) -> TimeSim:
         process_id = multiprocessing.current_process().pid
         thread_id = threading.get_ident()
         if process_id not in cls._instances:

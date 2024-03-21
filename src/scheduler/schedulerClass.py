@@ -16,7 +16,11 @@ class Mem:
 
 class Scheduler:
     def __init__(self, cluster: list[Node], can_predict, task_mem, node_mem,
-                 time_can_predict=ParamHolder().time_can_predict, time_block_size=ParamHolder().time_block_size):
+                 time_can_predict=None, time_block_size=None):
+        if time_can_predict is None:
+            time_can_predict = ParamHolder().time_can_predict
+        if time_block_size is None:
+            time_block_size = ParamHolder().time_block_size
         self.cluster = cluster
         self.__can_predict = can_predict
         self.__time_can_predict = time_can_predict  # 可预测时间长度，如=720，720 *10 = 7200s

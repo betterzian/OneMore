@@ -8,27 +8,29 @@ from src.envSim.timeSim import TimeHolder
 from src.envSim.simParam import ParamHolder
 
 
-def generate_offline_task_list(src_task=[], task_num=ParamHolder().offline_task_num, src_task_file=str(
-    "../srcData/state_value/" + ParamHolder().filename + "/off_task_list.csv"), all=False):
+def generate_offline_task_list(temp_list=[], task_num=None, src_task_file=None, all_bool=False):
     if task_num == 0:
         return []
-    if len(src_task) == 0:
+    if task_num is None:
+        task_num = ParamHolder().offline_task_num
+    if src_task_file is None:
+        src_task_file = "../srcData/state_value/" + ParamHolder().filename + "/off_task_list.csv"
+    time_len = TimeHolder().get_time_len()
+    if len(temp_list) == 0:
         src_task = np.loadtxt(src_task_file, delimiter=',', dtype=float)
-    if all:
-        return src_task
+        if all_bool:
+            return src_task
+        temp_list = np.random.choice(range(len(src_task)), size=task_num, replace=True)
+        temp_list = src_task[temp_list]
     task_list = []
-    temp_list = np.random.choice(range(len(src_task)), size=task_num, replace=True)
-    temp_list = src_task[temp_list]
-    time_len = TimeHolder().get_fake_time_left()
     for i in range(len(temp_list)):
-        if i < 800:
+        if i < 600:
             arrive_time = 0
         else:
             arrive_time = random.randint(1, time_len - 1)
         temp = temp_list[i]
         task_list.append(
             Task(id=i, cpu=temp[0], gpu=temp[1],
-                 # time_len=1,
                  time_len=random.randint(90, time_len - 1),
                  arrive_time=arrive_time)
         )
@@ -36,7 +38,9 @@ def generate_offline_task_list(src_task=[], task_num=ParamHolder().offline_task_
     return task_list
 
 
-def generate_online_task_list(task_num=ParamHolder().online_task_num):
+def generate_online_task_list(task_num=None):
+    if task_num is None:
+        task_num = ParamHolder().online_task_num
     if task_num == 0:
         return []
     file_list = os.listdir('/disk7T/vis/code/OneMore/srcData/online_task/')
@@ -61,7 +65,11 @@ def generate_src_task_list():
     return tasks
 
 
-def generate_cluster(node_type=ParamHolder().node_type, node_num=ParamHolder().node_num):
+def generate_cluster(node_type=None, node_num=None):
+    if node_type is None:
+        node_type = ParamHolder().node_type
+    if node_num is None:
+        node_num = ParamHolder().node_num
     cluster = []
     count = 0
     for i in range(len(node_type)):

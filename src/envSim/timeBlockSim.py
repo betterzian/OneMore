@@ -1,11 +1,14 @@
 import math
-
-from src.envSim.timeSim import TimeHolder
 import numpy as np
+from src.envSim.timeSim import TimeHolder
 
 
 class TimeBlockSim:
     def __init__(self, data, time_len, time_flag, is_cpu):
+        if time_len is None:
+            time_len = TimeHolder().get_time_len()
+        if time_flag is None:
+            time_flag = TimeHolder().get_time_init_flag()
         self.__time_len = time_len
         self.__time_flag = time_flag
         if is_cpu:

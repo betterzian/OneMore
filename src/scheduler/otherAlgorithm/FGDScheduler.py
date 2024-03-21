@@ -1,12 +1,11 @@
 from src.scheduler.schedulerClass import Scheduler
-from src.scheduler.myAlgorithm.varianceScheduler import VarianceScheduler
 from src.envSim.generateEnv import generate_offline_task_list
 import numpy as np
 
 class FGDScheduler(Scheduler):
     def __init__(self, cluster, can_predict=True, task_mem={}, node_mem={}):
         super().__init__(cluster, can_predict, task_mem, node_mem)
-        self.__offline_task_list = generate_offline_task_list(all=True)
+        self.__offline_task_list = generate_offline_task_list(all_bool=True)
         self.__offline_task_len = len(self.__offline_task_list)
         #self.online_scheduler = VarianceScheduler(cluster, can_predict, self._task_mem, self._node_mem)
 

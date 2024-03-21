@@ -1,8 +1,7 @@
 from src.envSim.cpuGpu import Cpu, Gpu
-import numpy as np
 from src.envSim.timeSim import TimeHolder
 from src.envSim.task import Task
-from src.envSim.simParam import ParamHolder
+
 
 
 class Node:
@@ -110,6 +109,8 @@ class Node:
         return pop_list
 
     def get_success_num(self):
+        if TimeHolder().get_time() == 0:
+            return 0, 0, 0
         while self.__offline_task_list:
             task = self.__offline_task_list.pop()
             self.__add_success_offline_task_list(task)
