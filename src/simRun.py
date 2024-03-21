@@ -6,6 +6,9 @@ def sim_run(scheduler, online_task_list, offline_task_list,args_dict=None):
     if args_dict is not None:
         ParamHolder().init_again(args_dict)
         TimeHolder().init_again()
+        # args_dict["name"] = type(scheduler).__name__ + "," + str(scheduler.get_can_predict())
+        # args_dict["oftn"] = len(offline_task_list)
+        # print(args_dict)
     force_schedule = True
     if len(offline_task_list) == 0:
         force_schedule = False

@@ -1,9 +1,9 @@
 from src.scheduler.schedulerClass import Scheduler
 import numpy as np
-from src.scheduler.myAlgorithm.generateValue.generateContinuousValue import StateValueExpert, deal_state, get_expert_num
+from src.scheduler.myAlgorithm.generateValue.generateContinuousValue import StateValueExpert, deal_state
 from src.envSim.simParam import ParamHolder
 import torch
-
+from src.envSim.timeCost import get_time
 
 class ModelScheduler(Scheduler):
     def __init__(self, cluster, can_predict=True, task_mem={}, node_mem={}):
@@ -31,6 +31,7 @@ class ModelScheduler(Scheduler):
         self.__diag = torch.diag(torch.ones(9, device=self.__device))
         self.__diag = self.__diag[1:,:]
         self.__indices = torch.zeros((8,9), device=self.__device, dtype=torch.long)
+        self.__prob = torch.zeros(8, device=self.__device)
 
         for i in range(10):
             self.__trained_experts.append(StateValueExpert(9).to(self.__device))
@@ -203,8 +204,7 @@ class ModelScheduler(Scheduler):
                         temp_list[i] = (old_prob - new_prob)
                 prob[~indices] = temp_list
                 prob[~indices] += (self.__task_prob_int[torch.min(torch.floor(old_state[0]), self.__cpu_max_num).to(torch.int)][1] -
-                                   self.__task_prob_float[torch.min(torch.floor(old_state[0]), self.__cpu_max_num).to(torch.int)][
-                                       9]) * 1.0 / self.__task_max_num
+                                   self.__task_prob_float[torch.min(torch.floor(old_state[0]), self.__cpu_max_num).to(torch.int)][9]) * 1.0 / self.__task_max_num
             old_value = self.__get_value(old_state)
             new_value = self.__get_value(new_state)
             value = old_value - new_value
@@ -212,6 +212,7 @@ class ModelScheduler(Scheduler):
             max_value, max_index = torch.max(value, dim=0)
         return max_value.item(), max_index.item()
 
+    #@get_time
     def __get_value(self, state):
         state = state.view(-1, 9)
         #expert = get_expert_num(state)

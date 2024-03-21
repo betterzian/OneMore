@@ -1,10 +1,11 @@
 import sys
 sys.path.append("../")
 from src.simRun import sim_run
-
+from src.envSim.timeSim import TimeHolder
 def run(args_dict):
     from src.envSim.simParam import ParamHolder
     ParamHolder(args_dict)
+    TimeHolder().init_again()
     file = open('../tmp/all_'+ParamHolder().csv_name+'.txt', "w")
     file.close()
     from src.envSim.offlineTaskDataProcess import offline_data_process
@@ -28,7 +29,7 @@ def run(args_dict):
     else:
         for scheduler in schedulers:
             print("单进程,测试用")
-            sim_run(scheduler, online_task_list, offline_task_list)
+            sim_run(scheduler, online_task_list, offline_task_list,args_dict)
     if ParamHolder().csv_name[:3] != "all":
         txt_to_csv(ParamHolder().csv_name)
 
@@ -36,7 +37,7 @@ def run(args_dict):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='param')
-    parser.add_argument('--test', action='store_true')
+    parser.add_argument('--test', action='store_false')
     parser.add_argument('--gather', action='store_false')
     parser.add_argument('--tl', type=int, default=17280)
     parser.add_argument('--tif', type=int, default=0)
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--csv_name', type=str, default=None)
     args = parser.parse_args()
     args_dict = vars(args)
-    args_dict["device"] = "cpu"
+    args_dict["device"] = "gpu"
     run(args_dict)
 
 

@@ -1,11 +1,11 @@
 import sys
-
 sys.path.append("../")
+import torch
 from datetime import datetime
 import torch.multiprocessing as mp
 from src.envSim.TXTtoCSV import txt_to_csv
 from src.simRun import sim_run
-
+from copy import deepcopy
 
 def init_Holders(args_dict):
     from src.envSim.simParam import ParamHolder
@@ -31,7 +31,7 @@ def run():
     tap_list = [30, 90, 180, 360]
     ontn_list = {1000: [1400, 1600, 1800], 3000: [1400, 1600, 1800], 5000: [1400, 1600, 1800]}
     filename_list = ["openb_pod_list_multigpu50"]
-    p = mp.Pool(14)
+    p = mp.Pool(50)
     args_dict = {"test": False,
                  "tl": 17280,
                  "tif": 0,
@@ -66,6 +66,8 @@ def run():
                             cluster = generate_cluster()
                             online_task_list = generate_online_task_list()
                             offline_task_list = generate_offline_task_list()
+                            while not torch.cuda.is_available():
+                                pass
                             if not ok:
                                 schedulers = []
                                 schedulers.extend(init_scheduler(cluster, False))
@@ -76,7 +78,7 @@ def run():
                             if not args_dict["test"]:
                                 for scheduler in schedulers:
                                     p.apply_async(sim_run,
-                                                  args=(scheduler, online_task_list, offline_task_list, args_dict,),
+                                                  args=(scheduler, online_task_list, offline_task_list, deepcopy(args_dict),),
                                                   callback=callback)
                             else:
                                 for scheduler in schedulers:
